@@ -1,12 +1,44 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
 
 import Image from "next/image";
 
-export default function SplashScreen() {
+export default function Splash() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.replace("/auth");
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [router]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background px-8 relative overflow-hidden">
+      {/* Animated background rings */}
+      {[1, 2, 3].map((ring) => (
+        <motion.div
+          key={ring}
+          className="absolute rounded-full border border-primary/10"
+          style={{
+            width: ring * 200,
+            height: ring * 200,
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.1, 0.3, 0.1] }}
+          transition={{
+            duration: 4,
+            delay: ring * 0.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+
       <motion.div
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
@@ -16,20 +48,15 @@ export default function SplashScreen() {
           stiffness: 120,
           damping: 12,
         }}
-        className="mb-8 relative flex items-center justify-center rounded-full overflow-visible"
-        style={{ width: 240, height: 240 }}
+        className="mb-8 relative"
       >
         <motion.div
-          className="absolute rounded-full"
+          className="absolute inset-0 rounded-full"
           style={{
-            width: 250,
-            height: 250,
-            top: -10,
-            left: -10,
             background:
-              "radial-gradient(circle at center, hsl(142 71% 45% / 0.5) 0%, hsl(142 71% 45% / 0.25) 40%, hsl(142 71% 45% / 0.1) 60%, transparent 75%)",
+              "radial-gradient(circle, hsl(142 71% 45% / 0.2) 0%, transparent 70%)",
           }}
-          animate={{ scale: [1, 1.25, 1], opacity: [0.6, 1, 0.6] }}
+          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
         <Image
@@ -66,16 +93,7 @@ export default function SplashScreen() {
         transition={{ delay: 1.3, type: "spring" }}
         className="mt-16"
       >
-        <div
-          style={{
-            width: "24px",
-            height: "24px",
-            border: "5px solid hsl(142, 71%, 45%)",
-            borderTop: "5px solid transparent",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        />
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </motion.div>
     </div>
   );
