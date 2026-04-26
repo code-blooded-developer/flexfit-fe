@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { useAuth } from "@/hooks/useAuth";
+
 import {
   ArrowLeft,
   User,
@@ -19,7 +21,7 @@ import {
 
 type Errors = { name?: string; email?: string; password?: string };
 
-const ErrorMsg = ({ msg }: { msg?: string }) => (
+const ErrorMsg = ({ msg }: { msg?: string | null }) => (
   <AnimatePresence>
     {msg && (
       <motion.div
@@ -38,13 +40,13 @@ const ErrorMsg = ({ msg }: { msg?: string }) => (
 
 export default function SignUp() {
   const router = useRouter();
+  const { signUp, isLoading, error: apiError } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
-  const [formError, setFormError] = useState<string | undefined>();
-  const [submitting, setSubmitting] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: Errors = {};
@@ -79,14 +81,13 @@ export default function SignUp() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) {
       return;
     }
 
-    setSubmitting(true);
-    router.replace("/onboarding");
+    await signUp(name.trim(), email.trim(), password);
   };
 
   const clearError = (field: keyof Errors) => {
@@ -228,13 +229,23 @@ export default function SignUp() {
           <ErrorMsg msg={errors.password} />
         </div>
 
+        <ErrorMsg msg={apiError} />
+
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: isLoading ? 1 : 1.02 }}
+          whileTap={{ scale: isLoading ? 1 : 0.97 }}
           type="submit"
-          className="w-full py-4 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base glow-primary-intense mt-2"
+          disabled={isLoading}
+          className="w-full py-4 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base glow-primary-intense mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          Create Account
+          {isLoading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Creating account...
+            </>
+          ) : (
+            "Create Account"
+          )}
         </motion.button>
 
         <p className="text-center text-xs text-muted-foreground mt-2 px-4">

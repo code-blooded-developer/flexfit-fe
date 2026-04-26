@@ -123,15 +123,6 @@ export default function Auth() {
           Create an Account
         </motion.button>
       </motion.div>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="text-muted-foreground text-xs text-center mt-auto"
-      >
-        By continuing, you agree to our Terms & Privacy Policy
-      </motion.p>
     </>
   );
 }
