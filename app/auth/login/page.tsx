@@ -1,24 +1,90 @@
 "use client";
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+
+import {
+  ArrowLeft,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+
+type Errors = { email?: string; password?: string };
+
+const ErrorMsg = ({ msg }: { msg?: string | null }) => (
+  <AnimatePresence>
+    {msg && (
+      <motion.div
+        initial={{ opacity: 0, y: -4, height: 0 }}
+        animate={{ opacity: 1, y: 0, height: "auto" }}
+        exit={{ opacity: 0, y: -4, height: 0 }}
+        transition={{ duration: 0.18 }}
+        className="flex items-center gap-1.5 px-1 text-xs text-destructive"
+      >
+        <AlertCircle size={12} />
+        <span>{msg}</span>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 export default function SignUp() {
   const router = useRouter();
+  const { signIn, isLoading, error: apiError } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Errors>({});
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    router.replace("/onboarding");
+  const validate = (): boolean => {
+    const newErrors: Errors = {};
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = "Invalid email address";
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
   };
+
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!validate()) {
+      return;
+    }
+
+    await signIn(email.trim(), password);
+  };
+
+  const clearError = (field: keyof Errors) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const fieldClass = (hasError: boolean) =>
+    `w-full pl-12 pr-4 py-4 rounded-xl bg-secondary border text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors ${
+      hasError
+        ? "border-destructive focus:border-destructive"
+        : "border-border focus:border-primary"
+    }`;
 
   return (
     <>
@@ -42,8 +108,8 @@ export default function SignUp() {
         <Image
           src="/logos/flexfit-logo.png"
           alt="FlexFit"
-          width="50"
-          height="50"
+          width={50}
+          height={50}
           className="w-16 h-16 mb-4"
         />
         <h1 className="text-3xl font-bold font-display text-foreground">
@@ -56,6 +122,7 @@ export default function SignUp() {
 
       <motion.form
         onSubmit={handleSubmit}
+        noValidate
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
@@ -68,17 +135,22 @@ export default function SignUp() {
           <div className="relative">
             <Mail
               size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${errors.email ? "text-destructive" : "text-muted-foreground"}`}
             />
             <input
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearError("email");
+              }}
               placeholder="you@example.com"
-              className="w-full pl-12 pr-4 py-4 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              aria-invalid={!!errors.email}
+              className={fieldClass(!!errors.email)}
             />
           </div>
+          <ErrorMsg msg={errors.email} />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -94,9 +166,13 @@ export default function SignUp() {
               type={showPassword ? "text" : "password"}
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearError("password");
+              }}
               placeholder="••••••••"
-              className="w-full pl-12 pr-12 py-4 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              aria-invalid={!!errors.password}
+              className={fieldClass(!!errors.password)}
             />
             <button
               type="button"
@@ -107,6 +183,7 @@ export default function SignUp() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          <ErrorMsg msg={errors.password} />
         </div>
 
         <Link
@@ -116,13 +193,23 @@ export default function SignUp() {
           Forgot password?
         </Link>
 
+        <ErrorMsg msg={apiError} />
+
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: isLoading ? 1 : 1.02 }}
+          whileTap={{ scale: isLoading ? 1 : 0.97 }}
           type="submit"
-          className="w-full py-4 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base glow-primary-intense mt-2"
+          disabled={isLoading}
+          className="w-full py-4 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base glow-primary-intense mt-2 flex items-center justify-center gap-2 disabled:opacity-70"
         >
-          Log In
+          {isLoading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Logging in...
+            </>
+          ) : (
+            "Log In"
+          )}
         </motion.button>
 
         <p className="text-center text-sm text-muted-foreground mt-6">

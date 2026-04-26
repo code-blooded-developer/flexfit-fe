@@ -81,7 +81,7 @@ export default function SignUp() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) {
       return;
@@ -125,8 +125,8 @@ export default function SignUp() {
         <Image
           src="/logos/flexfit-logo.png"
           alt="FlexFit"
-          width="50"
-          height="50"
+          width={50}
+          height={50}
           className="w-16 h-16 mb-4"
         />
         <h1 className="text-3xl font-bold font-display text-foreground">
