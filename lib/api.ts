@@ -5,7 +5,7 @@ type RequestOptions = RequestInit & {
   params?: Record<string, string>;
 };
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`;
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
 
 async function tryRefresh(): Promise<boolean> {
   try {
