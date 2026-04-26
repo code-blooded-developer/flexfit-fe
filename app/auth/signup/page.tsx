@@ -1,12 +1,40 @@
 "use client";
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { ArrowLeft, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+
+type Errors = { name?: string; email?: string; password?: string };
+
+const ErrorMsg = ({ msg }: { msg?: string }) => (
+  <AnimatePresence>
+    {msg && (
+      <motion.div
+        initial={{ opacity: 0, y: -4, height: 0 }}
+        animate={{ opacity: 1, y: 0, height: "auto" }}
+        exit={{ opacity: 0, y: -4, height: 0 }}
+        transition={{ duration: 0.18 }}
+        className="flex items-center gap-1.5 px-1 text-xs text-destructive"
+      >
+        <AlertCircle size={12} />
+        <span>{msg}</span>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 export default function SignUp() {
   const router = useRouter();
@@ -14,11 +42,65 @@ export default function SignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Errors>({});
+  const [formError, setFormError] = useState<string | undefined>();
+  const [submitting, setSubmitting] = useState(false);
+
+  const validate = (): boolean => {
+    const newErrors: Errors = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Full name is required";
+    } else if (name.trim().length < 2 || name.trim().length > 100) {
+      newErrors.name = "Full name must be between 2 and 100 characters";
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = "Invalid email address";
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    } else if (
+      !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)[A-Za-z\\d@#$%^&+=!]{8,}$/.test(
+        password,
+      )
+    ) {
+      newErrors.password =
+        "Password must contain uppercase, lowercase letters and numbers";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validate()) {
+      return;
+    }
+
+    setSubmitting(true);
     router.replace("/onboarding");
   };
+
+  const clearError = (field: keyof Errors) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const fieldClass = (hasError: boolean, extra = "") =>
+    `w-full pl-12 pr-4 py-4 rounded-xl bg-secondary border text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors ${
+      hasError
+        ? "border-destructive focus:border-destructive"
+        : "border-border focus:border-primary"
+    } ${extra}`;
 
   return (
     <>
@@ -56,6 +138,7 @@ export default function SignUp() {
 
       <motion.form
         onSubmit={handleSubmit}
+        noValidate
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
@@ -68,17 +151,22 @@ export default function SignUp() {
           <div className="relative">
             <User
               size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${errors.name ? "text-destructive" : "text-muted-foreground"}`}
             />
             <input
               type="text"
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Alex Johnson"
-              className="w-full pl-12 pr-4 py-4 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              onChange={(e) => {
+                setName(e.target.value);
+                clearError("name");
+              }}
+              placeholder="John Doe"
+              aria-invalid={!!errors.name}
+              className={fieldClass(!!errors.name)}
             />
           </div>
+          <ErrorMsg msg={errors.name} />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -88,17 +176,22 @@ export default function SignUp() {
           <div className="relative">
             <Mail
               size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${errors.email ? "text-destructive" : "text-muted-foreground"}`}
             />
             <input
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearError("email");
+              }}
               placeholder="you@example.com"
-              className="w-full pl-12 pr-4 py-4 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              aria-invalid={!!errors.email}
+              className={fieldClass(!!errors.email)}
             />
           </div>
+          <ErrorMsg msg={errors.email} />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -108,16 +201,20 @@ export default function SignUp() {
           <div className="relative">
             <Lock
               size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 ${errors.password ? "text-destructive" : "text-muted-foreground"}`}
             />
             <input
               type={showPassword ? "text" : "password"}
               required
-              minLength={6}
+              minLength={8}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearError("password");
+              }}
               placeholder="At least 8 characters"
-              className="w-full pl-12 pr-12 py-4 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              aria-invalid={!!errors.password}
+              className={fieldClass(!!errors.password)}
             />
             <button
               type="button"
@@ -128,6 +225,7 @@ export default function SignUp() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          <ErrorMsg msg={errors.password} />
         </div>
 
         <motion.button
