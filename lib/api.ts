@@ -5,11 +5,25 @@ type RequestOptions = RequestInit & {
   params?: Record<string, string>;
 };
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`;
+
+async function tryRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    const json = await res.json();
+    return json.success === true;
+  } catch {
+    return false;
+  }
+}
 
 async function request<T>(
   endpoint: string,
   options: RequestOptions = {},
+  retry = true,
 ): Promise<T> {
   const { params, ...init } = options;
 
@@ -30,6 +44,17 @@ async function request<T>(
   });
 
   const json: ApiResponse<T> = await res.json();
+
+  // Access token expired mid-session — try refresh once then retry
+  if (json.status === 401 && retry) {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      return request<T>(endpoint, options, false);
+    }
+    // Refresh also failed — session is dead
+    window.location.href = "/auth/login";
+    throw new ApiError("Session expired. Please log in again.", 401);
+  }
 
   if (!json.success) {
     throw new ApiError(json.message, json.status);

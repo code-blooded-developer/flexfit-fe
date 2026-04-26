@@ -46,6 +46,11 @@ Backend is Java Spring Boot at `http://localhost:8080`.
 - After sign in: redirect to `/dashboard` if profile complete, else `/onboarding`
 - After sign up: always redirect to `/onboarding`
 
+### Auth Cookies
+
+- Access token cookie: `ACCESS_TOKEN` (HttpOnly)
+- Refresh token cookie: `REFRESH_TOKEN` (HttpOnly)
+
 ### Components
 
 - Use `motion` from `motion/react` for animations — not `framer-motion`

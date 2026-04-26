@@ -9,18 +9,60 @@ const authRoutes = [
   "/auth/forgot-password",
 ];
 
-export function proxy(request: NextRequest) {
-  const hasSession = request.cookies.has("ACCESS_TOKEN");
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+async function refreshAccessToken(
+  request: NextRequest,
+): Promise<NextResponse | null> {
+  try {
+    const refreshToken = request.cookies.get("REFRESH_TOKEN")?.value;
+    if (!refreshToken) return null;
+
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        Cookie: `REFRESH_TOKEN=${refreshToken}`,
+      },
+    });
+
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    if (!json.success) return null;
+
+    // Continue the original request with new access_token set
+    const response = NextResponse.next();
+    const setCookieHeader = res.headers.get("set-cookie");
+    if (setCookieHeader) {
+      response.headers.set("set-cookie", setCookieHeader);
+    }
+
+    return response;
+  } catch {
+    return null;
+  }
+}
+
+export async function proxy(request: NextRequest) {
+  const hasAccessToken = request.cookies.has("ACCESS_TOKEN");
   const { pathname } = request.nextUrl;
 
   const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
   const isAuthRoute = authRoutes.some((r) => pathname.startsWith(r));
 
-  if (isProtected && !hasSession) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+  if (isProtected) {
+    if (!hasAccessToken) {
+      const refreshed = await refreshAccessToken(request);
+
+      if (!refreshed) {
+        return NextResponse.redirect(new URL("/auth/login", request.url));
+      }
+
+      return refreshed;
+    }
   }
 
-  if (isAuthRoute && hasSession) {
+  if (isAuthRoute && hasAccessToken) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 }
