@@ -37,6 +37,7 @@ Backend is Java Spring Boot at `http://localhost:8080`.
 - Errors are thrown as `ApiError` from `lib/apiError.ts`
 - Auth tokens are HttpOnly cookies set by BE — never handled on frontend
 - Always use `credentials: 'include'` (already handled in lib/api.ts)
+- Route protection is handled in `proxy.ts` (Next.js 16 renamed middleware → proxy)
 
 ### Auth
 
