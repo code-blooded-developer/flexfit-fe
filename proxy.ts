@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const protectedRoutes = ["/dashboard", "/workout", "/profile", "/onboarding"];
-const authRoutes = [
-  "/auth",
-  "/auth/login",
-  "/auth/signup",
-  "/auth/forgot-password",
-];
+const protectedRoutes = ["/onboarding"];
+const authRoutes = ["/auth", "/login", "/signup", "/forgot-password"];
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -55,7 +50,7 @@ export async function proxy(request: NextRequest) {
       const refreshed = await refreshAccessToken(request);
 
       if (!refreshed) {
-        return NextResponse.redirect(new URL("/auth/login", request.url));
+        return NextResponse.redirect(new URL("/login", request.url));
       }
 
       return refreshed;
@@ -69,10 +64,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/workout/:path*",
-    "/profile/:path*",
+    "/auth",
+    "/login",
+    "/signup",
+    "/forgot-password",
     "/onboarding/:path*",
-    "/auth/:path*",
   ],
 };

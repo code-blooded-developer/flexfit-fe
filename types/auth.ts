@@ -18,8 +18,8 @@ export type UserProfileResponse = {
   name: string;
   gender: Gender | null;
   dateOfBirth: string | null;
-  heightInCm: number | null;
-  weightInKg: number | null;
+  height: number | null;
+  weight: number | null;
   fitnessGoal: FitnessGoal | null;
   experienceLevel: ExperienceLevel | null;
   workoutDaysPerWeek: number | null;

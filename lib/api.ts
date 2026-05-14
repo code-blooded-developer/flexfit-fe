@@ -52,7 +52,7 @@ async function request<T>(
       return request<T>(endpoint, options, false);
     }
     // Refresh also failed — session is dead
-    window.location.href = "/auth/login";
+    window.location.href = "/login";
     throw new ApiError("Session expired. Please log in again.", 401);
   }
 

@@ -25,7 +25,7 @@ export default function SignUp() {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         whileTap={{ scale: 0.92 }}
-        onClick={() => router.push("/auth/login")}
+        onClick={() => router.push("/login")}
         className="w-10 h-10 rounded-full flex items-center justify-center bg-secondary text-foreground relative z-10"
         aria-label="Back"
       >
@@ -95,7 +95,7 @@ export default function SignUp() {
           <p className="text-center text-sm text-muted-foreground mt-6">
             Remember your password?{" "}
             <Link
-              href="/auth/login"
+              href="/login"
               className="text-primary font-semibold hover:underline"
             >
               Log in
@@ -121,7 +121,7 @@ export default function SignUp() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => router.push("/auth/login")}
+            onClick={() => router.push("/login")}
             className="w-full py-4 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base glow-primary-intense"
           >
             Back to Login

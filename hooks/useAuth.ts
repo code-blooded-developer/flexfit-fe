@@ -56,7 +56,7 @@ export function useAuth() {
       await authService.logout();
     } finally {
       clearAuth();
-      router.push("/auth/login");
+      router.push("/login");
     }
   };
 

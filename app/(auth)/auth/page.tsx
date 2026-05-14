@@ -82,7 +82,7 @@ export default function Auth() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          onClick={() => router.push("/auth/login")}
+          onClick={() => router.push("/login")}
           className="flex items-center justify-center gap-3 w-full py-4 px-6 rounded-xl bg-secondary text-secondary-foreground font-semibold text-base border border-border"
         >
           <Mail size={20} />
@@ -117,7 +117,7 @@ export default function Auth() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          onClick={() => router.push("/auth/signup")}
+          onClick={() => router.push("/signup")}
           className="w-full py-4 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base glow-primary-intense"
         >
           Create an Account
