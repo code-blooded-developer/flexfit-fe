@@ -5,6 +5,8 @@ import {
   FitnessGoal,
   ExperienceLevel,
   WorkoutEnvironment,
+  HeightUnit,
+  WeightUnit,
 } from "@/types/auth";
 
 export interface OnboardingPayload {
@@ -14,8 +16,11 @@ export interface OnboardingPayload {
   workoutDaysPerWeek: number;
   workoutDurationMinutes: number;
   height: number;
+  heightUnit: HeightUnit;
   weight: number;
+  weightUnit: WeightUnit;
   gender: Gender;
+  dateOfBirth: Date;
 }
 
 export interface OnboardingAnswers {
@@ -28,8 +33,11 @@ export interface OnboardingAnswers {
 
 export interface ProfileAnswers {
   height: string;
+  heightUnit: HeightUnit;
   weight: string;
+  weightUnit: WeightUnit;
   gender: string;
+  dateOfBirth: string;
 }
 
 export interface StepOption {

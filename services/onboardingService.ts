@@ -5,5 +5,5 @@ import type { OnboardingPayload } from "@/types/onboarding";
 
 export const onboardingService = {
   complete: (payload: OnboardingPayload) =>
-    api.post<UserProfileResponse>("/users/profile", payload),
+    api.post<UserProfileResponse>("/profiles", payload),
 };

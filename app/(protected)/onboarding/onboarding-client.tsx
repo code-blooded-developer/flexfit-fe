@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
 
 import { onboardingSteps, TOTAL_STEPS } from "./_constants/onboarding-steps";
 
@@ -10,16 +9,17 @@ import { OnboardingHeader } from "./_components/onboarding-header";
 import { OptionStep } from "./_components/option-step";
 import { ProfileStep } from "./_components/profile-step";
 
-import { isProfileValid } from "./_lib/validation";
+import { validateProfile, type ProfileErrors } from "./_lib/validation";
+import { buildPayload } from "./_lib/build-payload";
 
 import type {
   ExperienceLevel,
   FitnessGoal,
   Gender,
   WorkoutEnvironment,
+  HeightUnit,
+  WeightUnit,
 } from "@/types/auth";
-
-import type { OnboardingPayload } from "@/types/onboarding";
 
 import { useCompleteOnboarding } from "@/hooks/useCompleteOnboarding";
 
@@ -40,17 +40,22 @@ const INITIAL_ANSWERS: Answers = {
 };
 
 export function OnboardingClient() {
-  const router = useRouter();
-
   const [step, setStep] = useState(0);
 
   const [answers, setAnswers] = useState<Answers>(INITIAL_ANSWERS);
 
   const [height, setHeight] = useState("");
+  const [heightUnit, setHeightUnit] = useState<HeightUnit>("CM");
 
   const [weight, setWeight] = useState("");
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("KG");
 
   const [gender, setGender] = useState<Gender | "">("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+
+  const [profileErrors, setProfileErrors] = useState<ProfileErrors>({});
+
+  const prevStepRef = useRef<number>(step);
 
   const { completeOnboarding, isLoading, error } = useCompleteOnboarding();
 
@@ -63,6 +68,14 @@ export function OnboardingClient() {
   useEffect(() => {
     if (isProfileStep) return;
 
+    const isGoingBack = step < prevStepRef.current;
+    if (isGoingBack) {
+      prevStepRef.current = step;
+      return;
+    }
+
+    prevStepRef.current = step;
+
     const currentValue = answers[currentStep.key];
 
     if (!currentValue) return;
@@ -72,11 +85,10 @@ export function OnboardingClient() {
     }, 280);
 
     return () => clearTimeout(timer);
-  }, [answers, currentStep, isProfileStep]);
+  }, [answers, currentStep, isProfileStep, step]);
 
   const handleBack = () => {
     if (step === 0) {
-      router.push("/auth");
       return;
     }
 
@@ -91,27 +103,48 @@ export function OnboardingClient() {
   };
 
   const handleSubmit = async () => {
-    if (!isProfileValid({ height, weight, gender })) return;
+    const { isValid, errors } = validateProfile({
+      height,
+      weight,
+      gender,
+      dateOfBirth,
+      heightUnit,
+      weightUnit,
+    });
 
-    const payload: OnboardingPayload = {
-      fitnessGoal: answers.fitnessGoal as FitnessGoal,
+    if (!isValid) {
+      setProfileErrors(errors);
+      return;
+    }
 
-      experienceLevel: answers.experienceLevel as ExperienceLevel,
+    setProfileErrors({});
 
-      workoutEnvironment: answers.workoutEnvironment as WorkoutEnvironment,
-
-      workoutDaysPerWeek: answers.workoutDaysPerWeek as number,
-
-      workoutDurationMinutes: answers.workoutDurationMinutes as number,
-
-      height: Number(height),
-
-      weight: Number(weight),
-
-      gender: gender as Gender,
+    const onboardingAnswers = {
+      fitnessGoal: answers.fitnessGoal,
+      experienceLevel: answers.experienceLevel,
+      workoutEnvironment: answers.workoutEnvironment,
+      workoutDaysPerWeek: String(answers.workoutDaysPerWeek ?? ""),
+      workoutDurationMinutes: String(answers.workoutDurationMinutes ?? ""),
     };
 
+    const profile = {
+      height,
+      heightUnit,
+      weight,
+      weightUnit,
+      gender,
+      dateOfBirth,
+    };
+
+    const payload = buildPayload(onboardingAnswers, profile);
+
     await completeOnboarding(payload);
+  };
+
+  const clearProfileError = (field: keyof ProfileErrors) => {
+    if (profileErrors[field]) {
+      setProfileErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
   return (
@@ -176,13 +209,37 @@ export function OnboardingClient() {
               height={height}
               weight={weight}
               gender={gender}
-              onHeightChange={setHeight}
-              onWeightChange={setWeight}
-              onGenderChange={setGender}
+              heightUnit={heightUnit}
+              weightUnit={weightUnit}
+              dateOfBirth={dateOfBirth}
+              errors={profileErrors}
+              onHeightChange={(v) => {
+                setHeight(v);
+                clearProfileError("height");
+              }}
+              onWeightChange={(v) => {
+                setWeight(v);
+                clearProfileError("weight");
+              }}
+              onGenderChange={(v) => {
+                setGender(v);
+                clearProfileError("gender");
+              }}
+              onHeightUnitChange={(v) => {
+                setHeightUnit(v);
+                clearProfileError("height");
+              }}
+              onWeightUnitChange={(v) => {
+                setWeightUnit(v);
+                clearProfileError("weight");
+              }}
+              onDateOfBirthChange={(v) => {
+                setDateOfBirth(v);
+                clearProfileError("dateOfBirth");
+              }}
               onSubmit={handleSubmit}
               loading={isLoading}
               error={error}
-              canContinue={isProfileValid({ height, weight, gender })}
             />
           )}
         </motion.div>

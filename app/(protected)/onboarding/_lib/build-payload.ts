@@ -23,8 +23,14 @@ export function buildPayload(
 
     height: Number(profile.height),
 
+    heightUnit: profile.heightUnit,
+
     weight: Number(profile.weight),
 
+    weightUnit: profile.weightUnit,
+
     gender: profile.gender as OnboardingPayload["gender"],
+
+    dateOfBirth: new Date(profile.dateOfBirth),
   };
 }

@@ -6,7 +6,9 @@ export type FitnessGoal =
   | "MAINTAIN_FITNESS"
   | "RECOMPOSITION";
 export type ExperienceLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
-export type WorkoutEnvironment = "HOME" | "GYM";
+export type WorkoutEnvironment = "HOME" | "GYM" | "SOCIETY_GYM";
+export type HeightUnit = "CM" | "FT";
+export type WeightUnit = "KG" | "LB";
 
 export type Equipment = {
   id: string;

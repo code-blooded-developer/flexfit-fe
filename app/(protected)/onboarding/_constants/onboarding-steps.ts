@@ -83,7 +83,7 @@ export const onboardingSteps: OnboardingStep[] = [
       },
       {
         label: "Society Gym",
-        value: "GYM",
+        value: "SOCIETY_GYM",
         icon: Users,
       },
     ],

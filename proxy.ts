@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const protectedRoutes = ["/onboarding"];
+const protectedRoutes = ["/onboarding", "/dashboard"];
 const authRoutes = ["/auth", "/login", "/signup", "/forgot-password"];
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -82,5 +82,6 @@ export const config = {
     "/signup",
     "/forgot-password",
     "/onboarding/:path*",
+    "/dashboard/:path*",
   ],
 };
