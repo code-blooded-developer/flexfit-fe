@@ -1,5 +1,8 @@
+"use client";
+
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+
 import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
 import { ApiError } from "@/lib/apiError";
@@ -7,32 +10,22 @@ import { ApiError } from "@/lib/apiError";
 export function useAuth() {
   const router = useRouter();
   const { setAuthFromSignUp, setAuthFromSignIn, clearAuth } = useAuthStore();
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const signUp = async (name: string, email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await authService.signUp(name, email, password);
+  const signUpMutation = useMutation({
+    mutationFn: (data: { name: string; email: string; password: string }) =>
+      authService.signUp(data.name, data.email, data.password),
+
+    onSuccess: (data) => {
       setAuthFromSignUp(data);
       router.push("/onboarding");
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message); // e.g. "Email already exists"
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await authService.signIn(email, password);
+  const signInMutation = useMutation({
+    mutationFn: (data: { email: string; password: string }) =>
+      authService.signIn(data.email, data.password),
+
+    onSuccess: (data) => {
       setAuthFromSignIn({
         email: data.email,
         role: data.role,
@@ -40,25 +33,57 @@ export function useAuth() {
         userProfile: data.userProfile,
       });
       router.push(data.isProfileComplete ? "/dashboard" : "/onboarding");
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: () => authService.logout(),
+
+    onSuccess: () => {
+      clearAuth();
+      router.push("/login");
+    },
+  });
+
+  const signUp = async (name: string, email: string, password: string) => {
+    try {
+      await signUpMutation.mutateAsync({ name, email, password });
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message); // e.g. "Invalid credentials"
-      } else {
-        setError("Something went wrong. Please try again.");
+        throw new Error(err.message);
       }
-    } finally {
-      setIsLoading(false);
+      throw new Error("Something went wrong. Please try again.");
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      await signInMutation.mutateAsync({ email, password });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        throw new Error(err.message);
+      }
+      throw new Error("Something went wrong. Please try again.");
     }
   };
 
   const logout = async () => {
     try {
-      await authService.logout();
-    } finally {
+      await logoutMutation.mutateAsync();
+    } catch {
       clearAuth();
       router.push("/login");
     }
   };
+
+  const isLoading = signUpMutation.isPending || signInMutation.isPending;
+
+  const error =
+    signUpMutation.error instanceof Error
+      ? signUpMutation.error.message
+      : signInMutation.error instanceof Error
+        ? signInMutation.error.message
+        : null;
 
   return { signUp, signIn, logout, error, isLoading };
 }

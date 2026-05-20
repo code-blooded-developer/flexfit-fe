@@ -28,6 +28,7 @@ export type UserProfileResponse = {
   workoutDurationMinutes: number | null;
   workoutEnvironment: WorkoutEnvironment | null;
   equipments: Equipment[];
+  profileComplete: boolean;
 };
 
 export type UserResponse = {
