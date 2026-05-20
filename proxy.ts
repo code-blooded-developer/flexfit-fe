@@ -45,20 +45,33 @@ export async function proxy(request: NextRequest) {
   const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
   const isAuthRoute = authRoutes.some((r) => pathname.startsWith(r));
 
-  if (isProtected) {
-    if (!hasAccessToken) {
+  if (!hasAccessToken) {
+    const hasRefreshToken = request.cookies.has("REFRESH_TOKEN");
+
+    if (hasRefreshToken) {
       const refreshed = await refreshAccessToken(request);
-
-      if (!refreshed) {
-        return NextResponse.redirect(new URL("/login", request.url));
+      if (refreshed) {
+        if (isAuthRoute) {
+          const redirect = NextResponse.redirect(
+            new URL("/onboarding", request.url),
+          );
+          const setCookieHeader = refreshed.headers.get("set-cookie");
+          if (setCookieHeader) {
+            redirect.headers.set("set-cookie", setCookieHeader);
+          }
+          return redirect;
+        }
+        return refreshed;
       }
+    }
 
-      return refreshed;
+    if (isProtected) {
+      return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
   if (isAuthRoute && hasAccessToken) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 }
 

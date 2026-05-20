@@ -9,17 +9,17 @@ export function buildPayload(
   profile: ProfileAnswers,
 ): OnboardingPayload {
   return {
-    fitnessGoal: answers.goal as OnboardingPayload["fitnessGoal"],
+    fitnessGoal: answers.fitnessGoal as OnboardingPayload["fitnessGoal"],
 
     experienceLevel:
       answers.experienceLevel as OnboardingPayload["experienceLevel"],
 
     workoutEnvironment:
-      answers.environment as OnboardingPayload["workoutEnvironment"],
+      answers.workoutEnvironment as OnboardingPayload["workoutEnvironment"],
 
-    workoutDaysPerWeek: Number(answers.daysPerWeek),
+    workoutDaysPerWeek: Number(answers.workoutDaysPerWeek),
 
-    workoutDurationMinutes: Number(answers.duration),
+    workoutDurationMinutes: Number(answers.workoutDurationMinutes),
 
     height: Number(profile.height),
 
