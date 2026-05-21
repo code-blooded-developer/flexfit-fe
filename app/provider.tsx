@@ -15,11 +15,14 @@ export default function AppProviders({
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   useEffect(() => {
-    // Zustand state is in-memory — on hard refresh, state is gone
-    // Middleware handles redirect via cookie check
-    // Just mark loading as done
     clearAuth();
   }, [clearAuth]);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
