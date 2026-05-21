@@ -68,7 +68,3 @@ export function validateProfile(profile: ProfileAnswers): {
     errors,
   };
 }
-
-export function isProfileValid(profile: ProfileAnswers): boolean {
-  return validateProfile(profile).isValid;
-}

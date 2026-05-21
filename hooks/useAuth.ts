@@ -5,7 +5,6 @@ import { useMutation } from "@tanstack/react-query";
 
 import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
-import { ApiError } from "@/lib/apiError";
 
 export function useAuth() {
   const router = useRouter();
@@ -46,25 +45,11 @@ export function useAuth() {
   });
 
   const signUp = async (name: string, email: string, password: string) => {
-    try {
-      await signUpMutation.mutateAsync({ name, email, password });
-    } catch (err) {
-      if (err instanceof ApiError) {
-        throw new Error(err.message);
-      }
-      throw new Error("Something went wrong. Please try again.");
-    }
+    await signUpMutation.mutateAsync({ name, email, password });
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      await signInMutation.mutateAsync({ email, password });
-    } catch (err) {
-      if (err instanceof ApiError) {
-        throw new Error(err.message);
-      }
-      throw new Error("Something went wrong. Please try again.");
-    }
+    await signInMutation.mutateAsync({ email, password });
   };
 
   const logout = async () => {
