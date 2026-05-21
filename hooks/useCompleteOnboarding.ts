@@ -5,8 +5,6 @@ import { useMutation } from "@tanstack/react-query";
 
 import { onboardingService } from "@/services/onboardingService";
 
-import { useAuthStore } from "@/store/authStore";
-
 import { ApiError } from "@/lib/apiError";
 
 import type { OnboardingPayload } from "@/types/onboarding";
@@ -14,14 +12,11 @@ import type { OnboardingPayload } from "@/types/onboarding";
 export function useCompleteOnboarding() {
   const router = useRouter();
 
-  const { setProfileComplete } = useAuthStore();
-
   const mutation = useMutation({
     mutationFn: (payload: OnboardingPayload) =>
       onboardingService.complete(payload),
 
-    onSuccess: (profile) => {
-      setProfileComplete(profile);
+    onSuccess: () => {
       router.push("/dashboard");
     },
   });

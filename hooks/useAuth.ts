@@ -4,18 +4,15 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 
 import { authService } from "@/services/authService";
-import { useAuthStore } from "@/store/authStore";
 
 export function useAuth() {
   const router = useRouter();
-  const { setAuthFromSignUp, setAuthFromSignIn, clearAuth } = useAuthStore();
 
   const signUpMutation = useMutation({
     mutationFn: (data: { name: string; email: string; password: string }) =>
       authService.signUp(data.name, data.email, data.password),
 
-    onSuccess: (data) => {
-      setAuthFromSignUp(data);
+    onSuccess: () => {
       router.push("/onboarding");
     },
   });
@@ -25,23 +22,12 @@ export function useAuth() {
       authService.signIn(data.email, data.password),
 
     onSuccess: (data) => {
-      setAuthFromSignIn({
-        email: data.email,
-        role: data.role,
-        isProfileComplete: data.isProfileComplete,
-        userProfile: data.userProfile,
-      });
       router.push(data.isProfileComplete ? "/dashboard" : "/onboarding");
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: () => authService.logout(),
-
-    onSuccess: () => {
-      clearAuth();
-      router.push("/login");
-    },
   });
 
   const signUp = async (name: string, email: string, password: string) => {
@@ -56,9 +42,9 @@ export function useAuth() {
     try {
       await logoutMutation.mutateAsync();
     } catch {
-      clearAuth();
-      router.push("/login");
+      // ignore — still redirect
     }
+    router.push("/login");
   };
 
   const isLoading = signUpMutation.isPending || signInMutation.isPending;

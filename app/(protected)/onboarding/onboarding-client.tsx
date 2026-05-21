@@ -40,7 +40,7 @@ const INITIAL_ANSWERS: Answers = {
 };
 
 export function OnboardingClient() {
-  const [step, setStep] = useState(5);
+  const [step, setStep] = useState(0);
 
   const [answers, setAnswers] = useState<Answers>(INITIAL_ANSWERS);
 
