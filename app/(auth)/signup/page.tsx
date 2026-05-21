@@ -8,6 +8,7 @@ import Link from "next/link";
 
 import { ErrorMsg } from "@/components/ErrorMsg";
 import { useAuth } from "@/hooks/useAuth";
+import { fieldClass } from "@/lib/fieldClass";
 
 import {
   ArrowLeft,
@@ -78,13 +79,6 @@ export default function SignUp() {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
-
-  const fieldClass = (hasError: boolean, extra = "") =>
-    `w-full pl-12 pr-4 py-4 rounded-xl bg-secondary border text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors ${
-      hasError
-        ? "border-destructive focus:border-destructive"
-        : "border-border focus:border-primary"
-    } ${extra}`;
 
   return (
     <>
