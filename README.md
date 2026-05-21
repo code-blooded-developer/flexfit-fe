@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlexFit — Frontend
 
-## Getting Started
+Personalized fitness coaching app frontend built with **Next.js 16**, **TypeScript**, **Tailwind CSS v4**, and **React 19**.
 
-First, run the development server:
+## Stack
+
+| Layer | Tool |
+|-------|------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS v4 |
+| Animations | `motion/react` |
+| Client state | Zustand |
+| Server state | TanStack Query |
+| Icons | Lucide React |
+| Package manager | Bun |
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Description |
+|---------|-------------|
+| `bun dev` | Start dev server |
+| `bun build` | Production build |
+| `bun start` | Start production server |
+| `bun lint` | Run ESLint |
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/              Next.js App Router pages & layouts
+├── (auth)/       Auth flow (login, signup, forgot password)
+├── (public)/     Public splash screen
+└── (protected)/  Authenticated routes (onboarding, dashboard)
+components/       Shared UI components
+hooks/            Custom React hooks (useAuth, useUserProfile, …)
+lib/              Utility functions (API client, narrow, fieldClass)
+services/         API call functions (auth, profile, onboarding)
+store/            Zustand stores (auth)
+types/            TypeScript type definitions
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Conventions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **API calls** go through `lib/api.ts` — never fetch directly in components
+- **Client state** → Zustand, **Server state** → TanStack Query
+- **Animations** use `motion/react` (not framer-motion)
+- No `axios`, no `localStorage` for auth, no inline styles
+- Auth uses HttpOnly cookies (handled by backend)
 
-## Deploy on Vercel
+## Backend
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Java Spring Boot API at `http://localhost:8080` (base path: `/api/v1`).
