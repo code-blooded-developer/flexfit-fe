@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { ErrorMsg } from "@/components/ErrorMsg";
 import { useAuth } from "@/hooks/useAuth";
 
 import {
@@ -15,29 +16,11 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  AlertCircle,
 } from "lucide-react";
 
 type Errors = { email?: string; password?: string };
 
-const ErrorMsg = ({ msg }: { msg?: string | null }) => (
-  <AnimatePresence>
-    {msg && (
-      <motion.div
-        initial={{ opacity: 0, y: -4, height: 0 }}
-        animate={{ opacity: 1, y: 0, height: "auto" }}
-        exit={{ opacity: 0, y: -4, height: 0 }}
-        transition={{ duration: 0.18 }}
-        className="flex items-center gap-1.5 px-1 text-xs text-destructive"
-      >
-        <AlertCircle size={12} />
-        <span>{msg}</span>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
-
-export default function SignUp() {
+export default function Login() {
   const router = useRouter();
   const { signIn, isLoading, error: apiError } = useAuth();
 
