@@ -10,7 +10,11 @@ import type { Gender, HeightUnit, WeightUnit } from "@/types/auth";
 
 import type { ProfileErrors } from "../_lib/validation";
 
-
+const GENDER_OPTIONS: { label: string; value: Gender }[] = [
+  { label: "Male", value: "MALE" },
+  { label: "Female", value: "FEMALE" },
+  { label: "Other", value: "OTHER" },
+];
 
 type Props = {
   height: string;
@@ -155,27 +159,14 @@ export function ProfileStep({
           </label>
 
           <div className="flex gap-3">
-            {[
-              {
-                label: "Male",
-                value: "MALE",
-              },
-              {
-                label: "Female",
-                value: "FEMALE",
-              },
-              {
-                label: "Other",
-                value: "OTHER",
-              },
-            ].map((item) => {
+            {GENDER_OPTIONS.map((item) => {
               const isSelected = gender === item.value;
 
               return (
                 <motion.button
                   key={item.value}
                   whileTap={{ scale: 0.96 }}
-                  onClick={() => onGenderChange(item.value as Gender)}
+                  onClick={() => onGenderChange(item.value)}
                   className={`flex-1 py-4 rounded-2xl font-semibold transition-all ${
                     isSelected
                       ? "bg-primary/15 border-2 border-primary text-primary"
