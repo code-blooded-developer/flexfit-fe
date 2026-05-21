@@ -10,14 +10,7 @@ import { ErrorMsg } from "@/components/ErrorMsg";
 import { useAuth } from "@/hooks/useAuth";
 import { fieldClass } from "@/lib/fieldClass";
 
-import {
-  ArrowLeft,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
 type Errors = { email?: string; password?: string };
 

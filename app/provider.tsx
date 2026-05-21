@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuthStore } from "@/store/authStore";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,8 @@ export default function AppProviders({
   }, [clearAuth]);
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </QueryClientProvider>
   );
 }
