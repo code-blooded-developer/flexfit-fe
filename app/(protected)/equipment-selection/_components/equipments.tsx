@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { motion } from "motion/react";
 import { Check, ChevronRight, Sliders } from "lucide-react";
-
-import { EQUIPMENT_EMOJIS } from "../_constants/equipment-emojis";
 
 import { useEquipmentStore } from "@/store/equipmentStore";
 
@@ -83,11 +82,17 @@ export function Equipments({ query, isLoading, filteredEquipments }: Props) {
                   }`}
                 >
                   <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 ${
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                       isOn ? "bg-primary/15" : "bg-secondary"
                     }`}
                   >
-                    {EQUIPMENT_EMOJIS[item.name] ?? "🏋️"}
+                    <Image
+                      src="/equipments/Dumbbell.webp"
+                      alt={item.name}
+                      width={24}
+                      height={24}
+                      className="object-contain"
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">
