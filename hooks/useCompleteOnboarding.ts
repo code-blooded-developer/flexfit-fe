@@ -16,8 +16,9 @@ export function useCompleteOnboarding() {
     mutationFn: (payload: OnboardingPayload) =>
       onboardingService.complete(payload),
 
-    onSuccess: () => {
-      router.push("/dashboard");
+    onSuccess: (data) => {
+      const env = data.workoutEnvironment;
+      router.push("/equipment-selection?environment=" + env);
     },
   });
 

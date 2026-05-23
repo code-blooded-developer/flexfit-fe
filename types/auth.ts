@@ -10,11 +10,6 @@ export type WorkoutEnvironment = "HOME" | "GYM" | "SOCIETY_GYM";
 export type HeightUnit = "CM" | "FT";
 export type WeightUnit = "KG" | "LB";
 
-export type Equipment = {
-  id: string;
-  name: string;
-};
-
 export type UserProfileResponse = {
   userId: string;
   name: string;
@@ -27,7 +22,6 @@ export type UserProfileResponse = {
   workoutDaysPerWeek: number | null;
   workoutDurationMinutes: number | null;
   workoutEnvironment: WorkoutEnvironment | null;
-  equipments: Equipment[];
   profileComplete: boolean;
 };
 
