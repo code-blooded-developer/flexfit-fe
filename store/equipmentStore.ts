@@ -8,6 +8,8 @@ type EquipmentStore = {
   editing: Equipment | null;
 
   toggleItem: (id: string) => void;
+  toggleVariant: (equipmentId: string, variantId: string) => void;
+  setVariants: (equipmentId: string, variantIds: string[]) => void;
   getWeightEntries: (id: string) => number;
   setEditing: (equipment: Equipment | null) => void;
   initFromData: (equipments: Equipment[]) => void;
@@ -28,6 +30,30 @@ export const useEquipmentStore = create<EquipmentStore>((set, get) => ({
       }
       return { selected: next };
     });
+  },
+
+  toggleVariant: (equipmentId: string, variantId: string) => {
+    set((state) => {
+      const current = state.selectedVariantIds[equipmentId] ?? [];
+      const next = current.includes(variantId)
+        ? current.filter((id) => id !== variantId)
+        : [...current, variantId];
+      return {
+        selectedVariantIds: {
+          ...state.selectedVariantIds,
+          [equipmentId]: next,
+        },
+      };
+    });
+  },
+
+  setVariants: (equipmentId: string, variantIds: string[]) => {
+    set((state) => ({
+      selectedVariantIds: {
+        ...state.selectedVariantIds,
+        [equipmentId]: variantIds,
+      },
+    }));
   },
 
   getWeightEntries: (id: string) => {

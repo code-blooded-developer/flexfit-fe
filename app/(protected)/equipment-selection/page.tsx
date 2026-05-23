@@ -16,6 +16,7 @@ import { AlertCircle } from "lucide-react";
 import { Header } from "./_components/header";
 import { Loader } from "./_components/loader";
 import { Equipments } from "./_components/equipments";
+import { VariantEditor } from "./_components/variant-editor";
 
 function EquipmentSelectionContent() {
   const searchParams = useSearchParams();
@@ -72,6 +73,8 @@ function EquipmentSelectionContent() {
         isLoading={isPending}
         filteredEquipments={filteredEquipments}
       />
+
+      <VariantEditor />
 
       <div className="fixed bottom-0 left-0 right-0 px-6 pt-4 pb-8 bg-gradient-to-t from-background via-background to-transparent z-20">
         <motion.button
