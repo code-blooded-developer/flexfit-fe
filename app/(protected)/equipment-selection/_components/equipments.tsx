@@ -89,8 +89,8 @@ export function Equipments({ query, isLoading, filteredEquipments }: Props) {
                     <Image
                       src="/equipments/Dumbbell.webp"
                       alt={item.name}
-                      width={24}
-                      height={24}
+                      width={64}
+                      height={64}
                       className="object-contain"
                     />
                   </div>
