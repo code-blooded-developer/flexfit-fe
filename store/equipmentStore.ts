@@ -4,11 +4,11 @@ import type { Equipment } from "@/types/equipment";
 
 type EquipmentStore = {
   selected: Set<string>;
-  selectedVariantIds: Record<string, string[]>;
+  variantQuantities: Record<string, Record<string, number>>;
   editing: Equipment | null;
 
   toggleItem: (id: string) => void;
-  toggleVariant: (equipmentId: string, variantId: string) => void;
+  setVariantQuantity: (equipmentId: string, variantId: string, quantity: number) => void;
   setVariants: (equipmentId: string, variantIds: string[]) => void;
   getWeightEntries: (id: string) => number;
   setEditing: (equipment: Equipment | null) => void;
@@ -17,7 +17,7 @@ type EquipmentStore = {
 
 export const useEquipmentStore = create<EquipmentStore>((set, get) => ({
   selected: new Set<string>(),
-  selectedVariantIds: {},
+  variantQuantities: {},
   editing: null,
 
   toggleItem: (id: string) => {
@@ -32,15 +32,13 @@ export const useEquipmentStore = create<EquipmentStore>((set, get) => ({
     });
   },
 
-  toggleVariant: (equipmentId: string, variantId: string) => {
+  setVariantQuantity: (equipmentId: string, variantId: string, quantity: number) => {
     set((state) => {
-      const current = state.selectedVariantIds[equipmentId] ?? [];
-      const next = current.includes(variantId)
-        ? current.filter((id) => id !== variantId)
-        : [...current, variantId];
+      const current = state.variantQuantities[equipmentId] ?? {};
+      const next = { ...current, [variantId]: quantity };
       return {
-        selectedVariantIds: {
-          ...state.selectedVariantIds,
+        variantQuantities: {
+          ...state.variantQuantities,
           [equipmentId]: next,
         },
       };
@@ -48,17 +46,27 @@ export const useEquipmentStore = create<EquipmentStore>((set, get) => ({
   },
 
   setVariants: (equipmentId: string, variantIds: string[]) => {
-    set((state) => ({
-      selectedVariantIds: {
-        ...state.selectedVariantIds,
-        [equipmentId]: variantIds,
-      },
-    }));
+    set((state) => {
+      const editing = get().editing;
+      const variants = editing?.variants ?? [];
+      const next: Record<string, number> = {};
+      for (const vid of variantIds) {
+        const v = variants.find((x) => x.id === vid);
+        next[vid] = v?.quantity ?? 1;
+      }
+      return {
+        variantQuantities: {
+          ...state.variantQuantities,
+          [equipmentId]: next,
+        },
+      };
+    });
   },
 
   getWeightEntries: (id: string) => {
-    const ids = get().selectedVariantIds[id];
-    return ids ? ids.length : 0;
+    const qmap = get().variantQuantities[id];
+    if (!qmap) return 0;
+    return Object.values(qmap).reduce((sum, q) => sum + q, 0);
   },
 
   setEditing: (equipment: Equipment | null) => {
@@ -67,17 +75,22 @@ export const useEquipmentStore = create<EquipmentStore>((set, get) => ({
 
   initFromData: (equipments: Equipment[]) => {
     const selected = new Set<string>();
-    const selectedVariantIds: Record<string, string[]> = {};
+    const variantQuantities: Record<string, Record<string, number>> = {};
 
     for (const eq of equipments) {
       if (eq.selected) {
         selected.add(eq.id);
       }
       if (eq.selectedVariantIds.length > 0) {
-        selectedVariantIds[eq.id] = eq.selectedVariantIds;
+        const quantities: Record<string, number> = {};
+        for (const vid of eq.selectedVariantIds) {
+          const variant = eq.variants.find((v) => v.id === vid);
+          quantities[vid] = variant?.quantity ?? 1;
+        }
+        variantQuantities[eq.id] = quantities;
       }
     }
 
-    set({ selected, selectedVariantIds });
+    set({ selected, variantQuantities });
   },
 }));

@@ -15,17 +15,17 @@ const formatWeight = (kg: number, unit: WeightUnit) =>
 
 export function VariantEditor() {
   const editing = useEquipmentStore((s) => s.editing);
-  const selectedVariantIds = useEquipmentStore((s) => s.selectedVariantIds);
+  const variantQuantities = useEquipmentStore((s) => s.variantQuantities);
   const setEditing = useEquipmentStore((s) => s.setEditing);
-  const toggleVariant = useEquipmentStore((s) => s.toggleVariant);
+  const setVariantQuantity = useEquipmentStore((s) => s.setVariantQuantity);
   const setVariants = useEquipmentStore((s) => s.setVariants);
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("KG");
 
   if (!editing) return null;
 
-  const variantIds = selectedVariantIds[editing.id] ?? [];
+  const qmap = variantQuantities[editing.id] ?? {};
   const allVariantIds = editing.variants.map((v) => v.id);
-  const allSelected = allVariantIds.every((id) => variantIds.includes(id));
+  const allSelected = allVariantIds.every((id) => (qmap[id] ?? 0) > 0);
 
   const clearAllWeights = () => setVariants(editing.id, []);
   const toggleAllWeights = () =>
@@ -103,12 +103,13 @@ export function VariantEditor() {
 
             <div className="flex flex-col gap-2">
               {editing.variants.map((variant) => {
-                const isSelected = variantIds.includes(variant.id);
+                const qty = qmap[variant.id] ?? 0;
+                const maxQty = 50;
                 return (
                   <div
                     key={variant.id}
                     className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 border-2 transition-all ${
-                      isSelected
+                      qty > 0
                         ? "bg-primary/5 border-primary/30"
                         : "bg-secondary border-transparent"
                     }`}
@@ -118,24 +119,24 @@ export function VariantEditor() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => {
-                          if (isSelected)
-                            toggleVariant(editing.id, variant.id);
-                        }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-background text-foreground"
+                        onClick={() =>
+                          setVariantQuantity(editing.id, variant.id, Math.max(0, qty - 1))
+                        }
+                        disabled={qty === 0}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-background text-foreground disabled:opacity-30"
                         aria-label="Remove"
                       >
                         <Minus size={14} />
                       </button>
                       <span className="min-w-8 text-center text-sm font-bold text-primary">
-                        {isSelected ? 1 : 0}
+                        {qty}
                       </span>
                       <button
-                        onClick={() => {
-                          if (!isSelected)
-                            toggleVariant(editing.id, variant.id);
-                        }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary text-primary-foreground"
+                        onClick={() =>
+                          setVariantQuantity(editing.id, variant.id, Math.min(maxQty, qty + 1))
+                        }
+                        disabled={qty >= maxQty}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary text-primary-foreground disabled:opacity-30"
                         aria-label="Add"
                       >
                         <Plus size={14} />

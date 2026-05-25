@@ -31,6 +31,7 @@ export type EquipmentVariant = {
   id: string;
   weight: number;
   weightUnit: WeightUnit;
+  quantity: number;
 };
 
 export type Equipment = {
