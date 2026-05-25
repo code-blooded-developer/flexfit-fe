@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
 import { Check, ChevronRight, Sliders } from "lucide-react";
@@ -8,6 +8,22 @@ import { Check, ChevronRight, Sliders } from "lucide-react";
 import { useEquipmentStore } from "@/store/equipmentStore";
 
 import type { Equipment, EquipmentCategory } from "@/types/equipment";
+
+function EquipmentIcon({ name }: { name: string }) {
+  const [error, setError] = useState(false);
+  const src = error ? "/equipments/fallback.webp" : `/equipments/${name}.webp`;
+
+  return (
+    <Image
+      src={src}
+      alt={name}
+      width={64}
+      height={64}
+      className="object-contain"
+      onError={() => setError(true)}
+    />
+  );
+}
 
 type Props = {
   isLoading: boolean;
@@ -86,13 +102,7 @@ export function Equipments({ query, isLoading, filteredEquipments }: Props) {
                       isOn ? "bg-primary/15" : "bg-secondary"
                     }`}
                   >
-                    <Image
-                      src="/equipments/Dumbbell.webp"
-                      alt={item.name}
-                      width={64}
-                      height={64}
-                      className="object-contain"
-                    />
+                    <EquipmentIcon name={item.name} />
                   </div>
 
                   <div className="flex-1 min-w-0">
