@@ -4,15 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 
-import { ChevronRight } from "lucide-react";
+import { AlertCircle, ChevronRight, LoaderCircle } from "lucide-react";
+
+import { ErrorMsg } from "@/components/ErrorMsg";
 
 import { useEquipments } from "@/hooks/useEquipments";
 import { useEquipmentStore } from "@/store/equipmentStore";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useSaveUserEquipment } from "@/hooks/useSaveUserEquipment";
 
 import type { WorkoutEnvironment } from "@/types/auth";
-
-import { AlertCircle } from "lucide-react";
+import type { SaveUserEquipmentPayload, VariantSelection } from "@/types/equipment";
 
 import { Header } from "./_components/header";
 import { Loader } from "./_components/loader";
@@ -33,7 +35,9 @@ function EquipmentSelectionContent() {
     }
   }, [environment, profileLoading, router]);
 
-  const { data, isPending, isError } = useEquipments(environment);
+  const { data, isPending, isError, error: fetchError } = useEquipments(environment);
+
+  const { saveEquipment, isLoading: isSaving, error: saveError } = useSaveUserEquipment();
 
   const [query, setQuery] = useState("");
 
@@ -43,8 +47,35 @@ function EquipmentSelectionContent() {
   const selectedCount = selected.size;
 
   const handleContinue = useCallback(() => {
-    router.push("/dashboard");
-  }, [router]);
+    const { selected, variantQuantities } = useEquipmentStore.getState();
+    const equipmentMap = new Map((data ?? []).map((eq) => [eq.id, eq]));
+
+    const payload: SaveUserEquipmentPayload = {
+      equipmentSelections: Array.from(selected).map((eqId) => {
+        const equipment = equipmentMap.get(eqId);
+        const userVariants = variantQuantities[eqId];
+
+        let variantSelections: VariantSelection[];
+        if (userVariants && Object.keys(userVariants).length > 0) {
+          variantSelections = Object.entries(userVariants).map(([variantId, quantity]) => ({
+            variantId,
+            quantity,
+          }));
+        } else if (equipment?.hasVariants && equipment.variants.length > 0) {
+          variantSelections = equipment.variants.map((v) => ({
+            variantId: v.id,
+            quantity: v.quantity,
+          }));
+        } else {
+          variantSelections = [];
+        }
+
+        return { equipmentId: eqId, variantSelections };
+      }),
+    };
+
+    saveEquipment(payload);
+  }, [data, saveEquipment]);
 
   useEffect(() => {
     if (data) {
@@ -77,7 +108,7 @@ function EquipmentSelectionContent() {
         <div className="flex flex-col items-center justify-center gap-2 px-6 py-20 text-center">
           <AlertCircle size={32} className="text-muted-foreground" />
           <p className="text-muted-foreground text-sm">
-            Failed to load equipments. Please try again.
+            {fetchError instanceof Error ? fetchError.message : "Failed to load equipments. Please try again."}
           </p>
         </div>
       )}
@@ -91,10 +122,12 @@ function EquipmentSelectionContent() {
       <VariantEditor />
 
       <div className="fixed bottom-0 left-0 right-0 px-6 pt-4 pb-8 bg-gradient-to-t from-background via-background to-transparent z-20">
+        <ErrorMsg msg={saveError} />
+
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleContinue}
-          disabled={selectedCount === 0}
+          disabled={selectedCount === 0 || isSaving}
           className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-semibold text-base transition-all ${
             selectedCount > 0
               ? "bg-primary text-primary-foreground glow-primary-intense"
@@ -102,7 +135,11 @@ function EquipmentSelectionContent() {
           }`}
         >
           Continue
-          <ChevronRight size={18} />
+          {isSaving ? (
+            <LoaderCircle size={18} className="animate-spin" />
+          ) : (
+            <ChevronRight size={18} />
+          )}
         </motion.button>
       </div>
     </>

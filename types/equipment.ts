@@ -44,3 +44,17 @@ export type Equipment = {
   selected: boolean;
   selectedVariantIds: string[];
 };
+
+export type VariantSelection = {
+  variantId: string;
+  quantity: number;
+};
+
+export type EquipmentSelection = {
+  equipmentId: string;
+  variantSelections: VariantSelection[];
+};
+
+export type SaveUserEquipmentPayload = {
+  equipmentSelections: EquipmentSelection[];
+};
