@@ -8,4 +8,7 @@ export const equipmentService = {
 
   saveUserEquipment: (payload: SaveUserEquipmentPayload) =>
     api.put<void>("/user-equipments", payload),
+
+  getUserEquipments: () =>
+    api.get<Equipment[]>("/user-equipments"),
 };

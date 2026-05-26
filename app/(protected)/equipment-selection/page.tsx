@@ -14,7 +14,10 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useSaveUserEquipment } from "@/hooks/useSaveUserEquipment";
 
 import type { WorkoutEnvironment } from "@/types/auth";
-import type { SaveUserEquipmentPayload, VariantSelection } from "@/types/equipment";
+import type {
+  SaveUserEquipmentPayload,
+  VariantSelection,
+} from "@/types/equipment";
 
 import { Header } from "./_components/header";
 import { Loader } from "./_components/loader";
@@ -26,7 +29,8 @@ function EquipmentSelectionContent() {
 
   const { profile, isLoading: profileLoading } = useUserProfile();
 
-  const environment = (profile?.workoutEnvironment ?? null) as WorkoutEnvironment | null;
+  const environment = (profile?.workoutEnvironment ??
+    null) as WorkoutEnvironment | null;
 
   useEffect(() => {
     if (profileLoading) return;
@@ -35,9 +39,18 @@ function EquipmentSelectionContent() {
     }
   }, [environment, profileLoading, router]);
 
-  const { data, isPending, isError, error: fetchError } = useEquipments(environment);
+  const {
+    data,
+    isPending,
+    isError,
+    error: fetchError,
+  } = useEquipments(environment);
 
-  const { saveEquipment, isLoading: isSaving, error: saveError } = useSaveUserEquipment();
+  const {
+    saveEquipment,
+    isLoading: isSaving,
+    error: saveError,
+  } = useSaveUserEquipment();
 
   const [query, setQuery] = useState("");
 
@@ -57,10 +70,12 @@ function EquipmentSelectionContent() {
 
         let variantSelections: VariantSelection[];
         if (userVariants && Object.keys(userVariants).length > 0) {
-          variantSelections = Object.entries(userVariants).map(([variantId, quantity]) => ({
-            variantId,
-            quantity,
-          }));
+          variantSelections = Object.entries(userVariants).map(
+            ([variantId, quantity]) => ({
+              variantId,
+              quantity,
+            }),
+          );
         } else if (equipment?.hasVariants && equipment.variants.length > 0) {
           variantSelections = equipment.variants.map((v) => ({
             variantId: v.id,
@@ -108,7 +123,9 @@ function EquipmentSelectionContent() {
         <div className="flex flex-col items-center justify-center gap-2 px-6 py-20 text-center">
           <AlertCircle size={32} className="text-muted-foreground" />
           <p className="text-muted-foreground text-sm">
-            {fetchError instanceof Error ? fetchError.message : "Failed to load equipments. Please try again."}
+            {fetchError instanceof Error
+              ? fetchError.message
+              : "Failed to load equipments. Please try again."}
           </p>
         </div>
       )}
