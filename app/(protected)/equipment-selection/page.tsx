@@ -1,13 +1,14 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 
 import { ChevronRight } from "lucide-react";
 
 import { useEquipments } from "@/hooks/useEquipments";
 import { useEquipmentStore } from "@/store/equipmentStore";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 import type { WorkoutEnvironment } from "@/types/auth";
 
@@ -19,12 +20,21 @@ import { Equipments } from "./_components/equipments";
 import { VariantEditor } from "./_components/variant-editor";
 
 function EquipmentSelectionContent() {
-  const searchParams = useSearchParams();
-  const environment = searchParams.get("environment") as WorkoutEnvironment;
+  const router = useRouter();
+
+  const { profile, isLoading: profileLoading } = useUserProfile();
+
+  const environment = (profile?.workoutEnvironment ?? null) as WorkoutEnvironment | null;
+
+  useEffect(() => {
+    if (profileLoading) return;
+    if (!environment) {
+      router.push("/onboarding");
+    }
+  }, [environment, profileLoading, router]);
 
   const { data, isPending, isError } = useEquipments(environment);
 
-  const router = useRouter();
   const [query, setQuery] = useState("");
 
   const selected = useEquipmentStore((s) => s.selected);
@@ -47,6 +57,10 @@ function EquipmentSelectionContent() {
     const q = query.toLowerCase();
     return (data ?? []).filter((eq) => eq.name.toLowerCase().includes(q));
   }, [data, query]);
+
+  if (!environment) {
+    return <Loader isLoading={true} />;
+  }
 
   return (
     <>
@@ -96,9 +110,5 @@ function EquipmentSelectionContent() {
 }
 
 export default function EquipmentSelectionPage() {
-  return (
-    <Suspense>
-      <EquipmentSelectionContent />
-    </Suspense>
-  );
+  return <EquipmentSelectionContent />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { onboardingService } from "@/services/onboardingService";
 
@@ -11,14 +11,15 @@ import type { OnboardingPayload } from "@/types/onboarding";
 
 export function useCompleteOnboarding() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: (payload: OnboardingPayload) =>
       onboardingService.complete(payload),
 
-    onSuccess: (data) => {
-      const env = data.workoutEnvironment;
-      router.push("/equipment-selection?environment=" + env);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      router.push("/equipment-selection");
     },
   });
 

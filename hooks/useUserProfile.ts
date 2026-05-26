@@ -13,7 +13,7 @@ export function useUserProfile() {
 
   return {
     profile: query.data,
-    isLoading: query.isLoading,
+    isLoading: query.isPending,
     isError: query.isError,
   };
 }
