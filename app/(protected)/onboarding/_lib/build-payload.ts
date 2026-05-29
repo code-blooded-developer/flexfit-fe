@@ -11,6 +11,7 @@ import type {
   ExperienceLevel,
   WorkoutEnvironment,
   Gender,
+  WorkoutSplit,
 } from "@/types/auth";
 
 const FITNESS_GOALS: readonly FitnessGoal[] = [
@@ -34,6 +35,13 @@ const WORKOUT_ENVIRONMENTS: readonly WorkoutEnvironment[] = [
 
 const GENDERS: readonly Gender[] = ["MALE", "FEMALE", "OTHER"];
 
+const WORKOUT_SPLITS: readonly WorkoutSplit[] = [
+  "FULL_BODY",
+  "UPPER_LOWER",
+  "PUSH_PULL_LEGS",
+  "BRO_SPLIT",
+];
+
 export function buildPayload(
   answers: OnboardingAnswers,
   profile: ProfileAnswers,
@@ -41,9 +49,13 @@ export function buildPayload(
   return {
     fitnessGoal: narrow(answers.fitnessGoal, FITNESS_GOALS),
     experienceLevel: narrow(answers.experienceLevel, EXPERIENCE_LEVELS),
-    workoutEnvironment: narrow(answers.workoutEnvironment, WORKOUT_ENVIRONMENTS),
+    workoutEnvironment: narrow(
+      answers.workoutEnvironment,
+      WORKOUT_ENVIRONMENTS,
+    ),
     workoutDaysPerWeek: Number(answers.workoutDaysPerWeek),
     workoutDurationMinutes: Number(answers.workoutDurationMinutes),
+    workoutSplit: narrow(answers.workoutSplit, WORKOUT_SPLITS),
     height: Number(profile.height),
     heightUnit: profile.heightUnit,
     weight: Number(profile.weight),

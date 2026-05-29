@@ -69,7 +69,10 @@ export function OnboardingClient() {
   const currentStep = onboardingSteps[step];
 
   useEffect(() => {
-    if (isProfileStep) return;
+    if (isProfileStep) {
+      prevStepRef.current = step;
+      return;
+    }
 
     const isGoingBack = step < prevStepRef.current;
     if (isGoingBack) {
@@ -99,10 +102,14 @@ export function OnboardingClient() {
   };
 
   const handleSelect = (value: string | number) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentStep.key]: value,
-    }));
+    setAnswers((prev) => {
+      const cleared = { ...prev };
+      for (let i = step + 1; i < onboardingSteps.length; i++) {
+        cleared[onboardingSteps[i].key as keyof Answers] =
+          INITIAL_ANSWERS[onboardingSteps[i].key as keyof Answers] as never;
+      }
+      return { ...cleared, [currentStep.key]: value };
+    });
   };
 
   const handleSubmit = async () => {
