@@ -52,9 +52,7 @@ export default function SignUp() {
     } else if (password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
     } else if (
-      !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)[A-Za-z\\d@#$%^&+=!]{8,}$/.test(
-        password,
-      )
+      !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d@#$%^&+=!]{8,}$/.test(password)
     ) {
       newErrors.password =
         "Password must contain uppercase, lowercase letters and numbers";
