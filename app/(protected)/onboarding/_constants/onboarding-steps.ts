@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import type { OnboardingStep } from "@/types/onboarding";
+import type { WorkoutSplit } from "@/types/auth";
 
 export const onboardingSteps: OnboardingStep[] = [
   {
@@ -42,7 +43,6 @@ export const onboardingSteps: OnboardingStep[] = [
       },
     ],
   },
-
   {
     key: "experienceLevel",
     title: "Experience level?",
@@ -65,7 +65,6 @@ export const onboardingSteps: OnboardingStep[] = [
       },
     ],
   },
-
   {
     key: "workoutEnvironment",
     title: "Where do you train?",
@@ -88,12 +87,15 @@ export const onboardingSteps: OnboardingStep[] = [
       },
     ],
   },
-
   {
     key: "workoutDaysPerWeek",
     title: "Days per week?",
     subtitle: "How many days can you train",
     options: [
+      {
+        label: "2 days",
+        value: 2,
+      },
       {
         label: "3 days",
         value: 3,
@@ -110,9 +112,12 @@ export const onboardingSteps: OnboardingStep[] = [
         label: "6 days",
         value: 6,
       },
+      {
+        label: "7 days",
+        value: 7,
+      },
     ],
   },
-
   {
     key: "workoutDurationMinutes",
     title: "Workout duration?",
@@ -130,8 +135,56 @@ export const onboardingSteps: OnboardingStep[] = [
         label: "60 min",
         value: 60,
       },
+      {
+        label: "90 min",
+        value: 90,
+      },
+      {
+        label: "120 min",
+        value: 120,
+      },
+    ],
+  },
+  {
+    key: "workoutSplit",
+    title: "Pick your split",
+    subtitle: "Choose Your Training Style",
+    options: [
+      {
+        label: "Full Body",
+        value: "FULL_BODY",
+        description:
+          "Hit every major muscle group each session. Best for 3 days/week.",
+      },
+      {
+        label: "Upper / Lower",
+        value: "UPPER_LOWER",
+        description:
+          "Alternate upper and lower body days. Ideal for 4 days/week.",
+      },
+      {
+        label: "Push / Pull / Legs",
+        value: "PUSH_PULL_LEGS",
+        description:
+          "Group muscles by movement pattern. Great for 5–6 days/week.",
+      },
+      {
+        label: "Bro Split",
+        value: "BRO_SPLIT",
+        description:
+          "One muscle group per day. High volume, requires 5–6 days/week.",
+      },
     ],
   },
 ] as const;
+
+export const RECOMMENDED_SPLITS: Record<number, WorkoutSplit[]> = {
+  2: ["FULL_BODY", "UPPER_LOWER"],
+  3: ["FULL_BODY", "PUSH_PULL_LEGS"],
+  4: ["UPPER_LOWER", "PUSH_PULL_LEGS"],
+  5: ["PUSH_PULL_LEGS", "BRO_SPLIT"],
+  6: ["PUSH_PULL_LEGS"],
+  7: ["PUSH_PULL_LEGS"],
+};
 
 export const TOTAL_STEPS = onboardingSteps.length + 1;

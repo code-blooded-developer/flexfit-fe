@@ -7,6 +7,7 @@ import {
   WorkoutEnvironment,
   HeightUnit,
   WeightUnit,
+  WorkoutSplit,
 } from "@/types/auth";
 
 export interface OnboardingPayload {
@@ -15,6 +16,7 @@ export interface OnboardingPayload {
   workoutEnvironment: WorkoutEnvironment;
   workoutDaysPerWeek: number;
   workoutDurationMinutes: number;
+  workoutSplit: WorkoutSplit;
   height: number;
   heightUnit: HeightUnit;
   weight: number;
@@ -29,6 +31,7 @@ export interface OnboardingAnswers {
   workoutEnvironment: string;
   workoutDaysPerWeek: string;
   workoutDurationMinutes: string;
+  workoutSplit: string;
 }
 
 export interface ProfileAnswers {

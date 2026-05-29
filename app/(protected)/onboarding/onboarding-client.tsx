@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
-import { onboardingSteps, TOTAL_STEPS } from "./_constants/onboarding-steps";
+import { onboardingSteps, TOTAL_STEPS, RECOMMENDED_SPLITS } from "./_constants/onboarding-steps";
 
 import { OnboardingHeader } from "./_components/onboarding-header";
 import { OptionStep } from "./_components/option-step";
@@ -19,6 +19,7 @@ import type {
   WorkoutEnvironment,
   HeightUnit,
   WeightUnit,
+  WorkoutSplit,
 } from "@/types/auth";
 
 import { useCompleteOnboarding } from "@/hooks/useCompleteOnboarding";
@@ -29,6 +30,7 @@ type Answers = {
   workoutEnvironment: WorkoutEnvironment | "";
   workoutDaysPerWeek: number | null;
   workoutDurationMinutes: number | null;
+  workoutSplit: WorkoutSplit | "";
 };
 
 const INITIAL_ANSWERS: Answers = {
@@ -37,6 +39,7 @@ const INITIAL_ANSWERS: Answers = {
   workoutEnvironment: "",
   workoutDaysPerWeek: null,
   workoutDurationMinutes: null,
+  workoutSplit: "",
 };
 
 export function OnboardingClient() {
@@ -125,6 +128,7 @@ export function OnboardingClient() {
       workoutEnvironment: answers.workoutEnvironment,
       workoutDaysPerWeek: String(answers.workoutDaysPerWeek ?? ""),
       workoutDurationMinutes: String(answers.workoutDurationMinutes ?? ""),
+      workoutSplit: answers.workoutSplit,
     };
 
     const profile = {
@@ -203,6 +207,12 @@ export function OnboardingClient() {
               options={currentStep.options}
               selectedValue={answers[currentStep.key]}
               onSelect={handleSelect}
+              getBadge={(value) =>
+                answers.workoutDaysPerWeek &&
+                RECOMMENDED_SPLITS[answers.workoutDaysPerWeek]?.includes(value as WorkoutSplit)
+                  ? "Recommended"
+                  : null
+              }
             />
           ) : (
             <ProfileStep

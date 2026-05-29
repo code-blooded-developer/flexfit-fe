@@ -9,6 +9,11 @@ export type ExperienceLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type WorkoutEnvironment = "HOME" | "GYM" | "SOCIETY_GYM";
 export type HeightUnit = "CM" | "FT";
 export type WeightUnit = "KG" | "LB";
+export type WorkoutSplit =
+  | "FULL_BODY"
+  | "UPPER_LOWER"
+  | "PUSH_PULL_LEGS"
+  | "BRO_SPLIT";
 
 export type UserProfileResponse = {
   userId: string;
@@ -22,6 +27,7 @@ export type UserProfileResponse = {
   workoutDaysPerWeek: number | null;
   workoutDurationMinutes: number | null;
   workoutEnvironment: WorkoutEnvironment | null;
+  workoutSplit: WorkoutSplit | null;
   profileComplete: boolean;
 };
 

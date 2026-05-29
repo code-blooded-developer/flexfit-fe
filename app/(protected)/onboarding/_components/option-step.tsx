@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactNode } from "react";
 import { motion } from "motion/react";
 import { Sparkles } from "lucide-react";
 
@@ -19,6 +20,7 @@ type Props = {
   options: Option[];
   selectedValue: string | number | null;
   onSelect: (value: string | number) => void;
+  getBadge?: (value: string | number) => ReactNode;
 };
 
 export function OptionStep({
@@ -27,6 +29,7 @@ export function OptionStep({
   options,
   selectedValue,
   onSelect,
+  getBadge,
 }: Props) {
   return (
     <>
@@ -102,6 +105,12 @@ export function OptionStep({
                   }`}
                 >
                   {option.label}
+
+                  {getBadge?.(option.value) && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-primary/20 text-primary ml-2 align-middle">
+                      {getBadge(option.value)}
+                    </span>
+                  )}
                 </p>
 
                 {option.description && (
