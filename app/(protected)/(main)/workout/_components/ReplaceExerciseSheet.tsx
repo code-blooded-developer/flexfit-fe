@@ -12,20 +12,22 @@ import {
 } from "@/components/ui/sheet";
 
 import type { SectionKey, LibraryItem } from "../_lib/workout-sections";
-import { workoutExerciseToLibraryItem } from "../_lib/workout-sections";
+import { workoutExerciseToLibraryItem, SECTION_TO_PHASE } from "../_lib/workout-sections";
+import type { MuscleGroup, ExerciseCategory } from "@/types/workout";
 import { useAlternatives } from "@/hooks/workout";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workoutId: string | null;
-  replacing: { section: SectionKey; id: string } | null;
+  replacing: { section: SectionKey; id: string; muscleGroup?: MuscleGroup } | null;
   onSelect: (section: SectionKey, id: string, replacement: LibraryItem) => void;
 };
 
 export default function ReplaceExerciseSheet({ open, onOpenChange, workoutId, replacing, onSelect }: Props) {
   const exerciseId = open && replacing ? replacing.id : null;
-  const { data, isLoading, error } = useAlternatives(workoutId, exerciseId);
+  const phase: ExerciseCategory | null = replacing ? (SECTION_TO_PHASE[replacing.section] as ExerciseCategory) : null;
+  const { data, isLoading, error } = useAlternatives(workoutId, exerciseId, phase, replacing?.muscleGroup ?? null);
 
   const items = useMemo(
     () => (data ?? []).map(workoutExerciseToLibraryItem),

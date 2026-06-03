@@ -25,6 +25,7 @@ export type Exercise = {
   id: string;
   name: string;
   muscle: string;
+  primaryMuscle?: MuscleGroup;
   image: string;
   gradient: string;
   sets?: number;
@@ -96,6 +97,12 @@ const PHASE_TO_SECTION: Record<string, SectionKey> = {
   WARMUP: "warmup",
   MAIN: "workout",
   STRETCHING: "stretch",
+};
+
+export const SECTION_TO_PHASE: Record<SectionKey, string> = {
+  warmup: "WARMUP",
+  workout: "MAIN",
+  stretch: "STRETCHING",
 };
 
 const PHASE_TO_TYPE: Record<string, ExerciseType> = {
@@ -188,6 +195,7 @@ export function mapWorkoutToSections(workout: Workout): Section[] {
       id: ex.id,
       name: ex.exerciseName,
       muscle: muscleName,
+      primaryMuscle: ex.primaryMuscle,
       image: MUSCLE_GROUP_EMOJI[ex.primaryMuscle] ?? "🏋️",
       gradient: pickGradient(ex.exerciseName),
       sets: ex.targetSets,

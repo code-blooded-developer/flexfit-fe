@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Plus } from "lucide-react";
 
 import type { Section, SectionKey, Exercise } from "../_lib/workout-sections";
+import type { MuscleGroup } from "@/types/workout";
 import ExerciseCard from "./ExerciseCard";
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
   sectionKey: SectionKey;
   onAdd: (sectionKey: SectionKey) => void;
   onLog: (sectionKey: SectionKey, exercise: Exercise) => void;
-  onReplace: (sectionKey: SectionKey, exerciseId: string) => void;
+  onReplace: (sectionKey: SectionKey, exerciseId: string, muscleGroup?: MuscleGroup) => void;
   onDelete: (sectionKey: SectionKey, exerciseId: string) => void;
 };
 

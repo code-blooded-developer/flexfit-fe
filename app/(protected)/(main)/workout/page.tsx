@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useWorkout, useReplaceExercise, useDeleteExercise } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
+import type { MuscleGroup } from "@/types/workout";
 import {
   mapWorkoutToSections,
   pickGradient,
@@ -25,7 +26,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 export default function WorkoutPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [addingTo, setAddingTo] = useState<SectionKey | null>(null);
-  const [replacing, setReplacing] = useState<{ section: SectionKey; id: string } | null>(null);
+  const [replacing, setReplacing] = useState<{ section: SectionKey; id: string; muscleGroup?: MuscleGroup } | null>(null);
   const [logging, setLogging] = useState<{ section: SectionKey; exercise: Exercise } | null>(null);
 
   useWorkout();
@@ -58,7 +59,8 @@ export default function WorkoutPage() {
     updateSection(addingTo, (exs) => [...exs, ex]);
   };
 
-  const handleReplace = (sk: SectionKey, id: string) => setReplacing({ section: sk, id });
+  const handleReplace = (sk: SectionKey, id: string, muscleGroup?: MuscleGroup) =>
+    setReplacing({ section: sk, id, muscleGroup });
 
   const handleReplaceSelect = (sk: SectionKey, id: string, replacement: LibraryItem) => {
     replaceMutation.mutate(
