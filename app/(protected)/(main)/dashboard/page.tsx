@@ -18,8 +18,8 @@ import AnimatedCounter from "../_components/AnimatedCounter";
 import { useRouter } from "next/navigation";
 import { useWorkout } from "@/hooks/useWorkout";
 import { useWorkoutStore } from "@/store/workoutStore";
-import type { MuscleGroup } from "@/types/workout";
-import Skeleton from "@/components/ui/Skeleton";
+import { MUSCLE_GROUP_LABELS } from "@/types/workout";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const container = {
   animate: { transition: { staggerChildren: 0.1 } },
@@ -35,20 +35,6 @@ const item = {
       ease: [0.25, 0.46, 0.45, 0.94] as const,
     },
   },
-};
-
-const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {
-  CHEST: "Chest Day",
-  BACK: "Back Day",
-  LEGS: "Leg Day",
-  SHOULDERS: "Shoulder Day",
-  BICEPS: "Biceps Day",
-  TRICEPS: "Triceps Day",
-  CORE: "Core Day",
-  GLUTES: "Glute Day",
-  HAMSTRINGS: "Hamstring Day",
-  CALVES: "Calf Day",
-  FULL_BODY: "Full Body Day",
 };
 
 export default function DashboardPage() {

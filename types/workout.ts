@@ -1,5 +1,3 @@
-export type WorkoutStatus = "PLANNED" | "COMPLETED" | "SKIPPED";
-
 export type MuscleGroup =
   | "CHEST"
   | "BACK"
@@ -12,6 +10,22 @@ export type MuscleGroup =
   | "HAMSTRINGS"
   | "CALVES"
   | "FULL_BODY";
+
+export type WorkoutStatus = "PLANNED" | "COMPLETED" | "SKIPPED";
+
+export const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {
+  CHEST: "Chest Day",
+  BACK: "Back Day",
+  LEGS: "Leg Day",
+  SHOULDERS: "Shoulder Day",
+  BICEPS: "Biceps Day",
+  TRICEPS: "Triceps Day",
+  CORE: "Core Day",
+  GLUTES: "Glute Day",
+  HAMSTRINGS: "Hamstring Day",
+  CALVES: "Calf Day",
+  FULL_BODY: "Full Body Day",
+};
 
 export type ExerciseType = "COMPOUND" | "ISOLATION";
 
