@@ -9,14 +9,17 @@ type Props = {
   durationMinutes: number | null;
 };
 
-export default function WorkoutHeader({ exerciseCount, durationMinutes }: Props) {
+export default function WorkoutHeader({
+  exerciseCount,
+  durationMinutes,
+}: Props) {
   const router = useRouter();
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="px-6 pt-14 pb-4 flex items-center gap-4"
+      className="sticky top-0 z-20 bg-background px-6 pt-8 pb-4 flex items-center gap-4"
     >
       <motion.button
         whileTap={{ scale: 0.9 }}

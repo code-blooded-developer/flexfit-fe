@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <motion.div variants={item} className="px-6 pt-14 pb-2 relative z-10">
+      <motion.div variants={item} className="px-6 pt-8 pb-2 relative z-10">
         <motion.p
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
