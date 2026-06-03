@@ -46,7 +46,7 @@ async function request<T>(
   const json: ApiResponse<T> = await res.json();
 
   // Access token expired mid-session — try refresh once then retry
-  if (json.status === 401 && retry) {
+  if ((json.status === 401 || json.status === 403) && retry) {
     const refreshed = await tryRefresh();
     if (refreshed) {
       return request<T>(endpoint, options, false);
