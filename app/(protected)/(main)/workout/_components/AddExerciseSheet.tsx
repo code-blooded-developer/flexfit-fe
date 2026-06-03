@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/sheet";
 
 import type { SectionKey, LibraryItem } from "../_lib/workout-sections";
-import { workoutExerciseToLibraryItem, SECTION_TO_PHASE } from "../_lib/workout-sections";
-import type { ExerciseCategory } from "@/types/workout";
+import { workoutExerciseToLibraryItem, SECTION_TO_PHASE, MUSCLE_GROUP_NAMES } from "../_lib/workout-sections";
+import type { ExerciseCategory, MuscleGroup } from "@/types/workout";
 import { useAlternatives } from "@/hooks/workout";
 
 type Props = {
@@ -34,7 +34,29 @@ export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectio
     [data],
   );
 
+  const allMuscles = useMemo(() => {
+    const set = new Set<MuscleGroup>();
+    items.forEach((item) => set.add(item.primaryMuscle));
+    return Array.from(set);
+  }, [items]);
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeMuscles, setActiveMuscles] = useState<Set<MuscleGroup>>(new Set());
+
+  const filteredItems = useMemo(() => {
+    if (activeMuscles.size === 0) return items;
+    return items.filter((item) => activeMuscles.has(item.primaryMuscle));
+  }, [items, activeMuscles]);
+
+  const toggleMuscle = (m: MuscleGroup) => {
+    setActiveMuscles((prev) => {
+      const next = new Set(prev);
+      if (next.has(m)) next.delete(m);
+      else next.add(m);
+      return next;
+    });
+    setSelectedIds(new Set());
+  };
 
   const toggle = (id: string) => {
     setSelectedIds((prev) => {
@@ -47,7 +69,7 @@ export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectio
 
   const handleAdd = () => {
     if (!sectionKey || selectedIds.size === 0) return;
-    const selected = items.filter((item) => selectedIds.has(item.alternativeId));
+    const selected = filteredItems.filter((item) => selectedIds.has(item.alternativeId));
     onAdd(sectionKey, selected);
     setSelectedIds(new Set());
   };
@@ -56,6 +78,7 @@ export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectio
     if (!o) {
       onOpenChange(false);
       setSelectedIds(new Set());
+      setActiveMuscles(new Set());
     }
   };
 
@@ -66,6 +89,38 @@ export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectio
           <SheetTitle className="font-display">Add to {sectionTitle}</SheetTitle>
           <SheetDescription>Select exercises to add from the library.</SheetDescription>
         </SheetHeader>
+
+        {!isLoading && !error && items.length > 0 && (
+          <div className="mt-4 flex gap-1.5 overflow-x-auto pb-3 scrollbar-hide">
+            <button
+              onClick={() => { setActiveMuscles(new Set()); setSelectedIds(new Set()); }}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-none ${
+                activeMuscles.size === 0
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              All
+            </button>
+            {allMuscles.map((m) => {
+              const active = activeMuscles.has(m);
+              return (
+                <button
+                  key={m}
+                  onClick={() => toggleMuscle(m)}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors focus-visible:outline-none ${
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground"
+                  }`}
+                >
+                  {MUSCLE_GROUP_NAMES[m]}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="mt-4 flex flex-col gap-2">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground text-sm">
@@ -75,7 +130,7 @@ export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectio
           ) : error ? (
             <p className="text-sm text-destructive text-center py-4">{error.message ?? "Failed to load exercises"}</p>
           ) : (
-            items.map((lib) => {
+            filteredItems.map((lib) => {
               const checked = selectedIds.has(lib.alternativeId);
               return (
                 <motion.button
@@ -107,7 +162,7 @@ export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectio
             })
           )}
         </div>
-        {!isLoading && !error && items.length > 0 && (
+        {!isLoading && !error && filteredItems.length > 0 && (
           <div className="sticky bottom-0 pb-4 pt-4 bg-background">
             <motion.button
               whileTap={{ scale: 0.97 }}

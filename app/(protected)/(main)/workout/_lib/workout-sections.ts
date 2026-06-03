@@ -115,6 +115,7 @@ export type LibraryItem = {
   alternativeId: string;
   name: string;
   muscle: string;
+  primaryMuscle: MuscleGroup;
   image: string;
   gradient: string;
   type: ExerciseType;
@@ -129,6 +130,7 @@ export function workoutExerciseToLibraryItem(ex: WorkoutExercise): LibraryItem {
   return {
     alternativeId: ex.exerciseId,
     name: ex.exerciseName,
+    primaryMuscle: ex.primaryMuscle,
     muscle: MUSCLE_GROUP_NAMES[ex.primaryMuscle] ?? ex.primaryMuscle,
     image: MUSCLE_GROUP_EMOJI[ex.primaryMuscle] ?? "🏋️",
     gradient: pickGradient(ex.exerciseName),

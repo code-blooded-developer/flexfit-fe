@@ -198,6 +198,14 @@
   .breathe-glow {
     animation: breathe 4s ease-in-out infinite;
   }
+
+  /* Hide scrollbar while keeping scroll functionality */
+  .scrollbar-hide {
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @keyframes shimmer {
