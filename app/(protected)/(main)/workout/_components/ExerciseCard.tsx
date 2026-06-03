@@ -15,13 +15,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import type { Exercise, SectionKey } from "../_lib/workout-sections";
-import type { MuscleGroup } from "@/types/workout";
 
 type Props = {
   exercise: Exercise;
   sectionKey: SectionKey;
   onLog: (sectionKey: SectionKey, exercise: Exercise) => void;
-  onReplace: (sectionKey: SectionKey, exerciseId: string, muscleGroup?: MuscleGroup) => void;
+  onReplace: (sectionKey: SectionKey, exerciseId: string) => void;
   onDelete: (sectionKey: SectionKey, exerciseId: string) => void;
 };
 
@@ -74,7 +73,7 @@ export default function ExerciseCard({ exercise: ex, sectionKey, onLog, onReplac
           <DropdownMenuItem onClick={() => onLog(sectionKey, ex)}>
             <ClipboardList size={14} className="mr-2" /> Add log
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onReplace(sectionKey, ex.id, ex.primaryMuscle)}>
+          <DropdownMenuItem onClick={() => onReplace(sectionKey, ex.id)}>
             <RefreshCw size={14} className="mr-2" /> Replace
           </DropdownMenuItem>
           <DropdownMenuItem

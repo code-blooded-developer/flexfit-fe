@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 
-import { useWorkout, useReplaceExercise, useDeleteExercise } from "@/hooks/workout";
+import { useWorkout, useReplaceExercise, useDeleteExercise, useAddExercises } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
-import type { MuscleGroup } from "@/types/workout";
 import {
   mapWorkoutToSections,
-  pickGradient,
   type Exercise,
   type LibraryItem,
   type Section,
@@ -26,18 +24,22 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 export default function WorkoutPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [addingTo, setAddingTo] = useState<SectionKey | null>(null);
-  const [replacing, setReplacing] = useState<{ section: SectionKey; id: string; muscleGroup?: MuscleGroup } | null>(null);
+  const [replacing, setReplacing] = useState<{ section: SectionKey; id: string } | null>(null);
   const [logging, setLogging] = useState<{ section: SectionKey; exercise: Exercise } | null>(null);
 
   useWorkout();
   const { todayWorkout, isLoading, error } = useWorkoutStore();
   const replaceMutation = useReplaceExercise();
   const deleteMutation = useDeleteExercise();
-  const [workoutId, setWorkoutId] = useState<string | null>(null);
+  const addExercisesMutation = useAddExercises();
 
-  if (todayWorkout && todayWorkout.id !== workoutId) {
-    setWorkoutId(todayWorkout.id);
-    setSections(mapWorkoutToSections(todayWorkout));
+  const [workoutKey, setWorkoutKey] = useState<string | null>(null);
+  const nextKey = todayWorkout
+    ? `${todayWorkout.id}-${todayWorkout.exercises.map((e) => e.id).join(",")}`
+    : null;
+  if (nextKey && nextKey !== workoutKey) {
+    setWorkoutKey(nextKey);
+    setSections(mapWorkoutToSections(todayWorkout!));
   }
 
   const updateSection = (key: SectionKey, fn: (exs: Exercise[]) => Exercise[]) =>
@@ -45,22 +47,15 @@ export default function WorkoutPage() {
 
   const handleAdd = (sk: SectionKey) => setAddingTo(sk);
 
-  const handleAddSubmit = (data: { name: string; muscle: string; type: "strength" | "cardio" | "mobility"; emoji: string }) => {
-    if (!addingTo) return;
-    const ex: Exercise = {
-      id: uid(),
-      name: data.name,
-      muscle: data.muscle,
-      image: data.emoji,
-      gradient: pickGradient(data.name),
-      type: data.type,
-      logs: [],
-    };
-    updateSection(addingTo, (exs) => [...exs, ex]);
+  const handleAddFromLibrary = (sk: SectionKey, items: LibraryItem[]) => {
+    addExercisesMutation.mutate(
+      { workoutId: todayWorkout!.id, exerciseIds: items.map((i) => i.alternativeId) },
+      { onSuccess: () => setAddingTo(null) },
+    );
   };
 
-  const handleReplace = (sk: SectionKey, id: string, muscleGroup?: MuscleGroup) =>
-    setReplacing({ section: sk, id, muscleGroup });
+  const handleReplace = (sk: SectionKey, id: string) =>
+    setReplacing({ section: sk, id });
 
   const handleReplaceSelect = (sk: SectionKey, id: string, replacement: LibraryItem) => {
     replaceMutation.mutate(
@@ -164,9 +159,10 @@ export default function WorkoutPage() {
       <AddExerciseSheet
         open={!!addingTo}
         onOpenChange={(o) => { if (!o) setAddingTo(null); }}
+        workoutId={todayWorkout?.id ?? null}
         sectionKey={addingTo}
         sectionTitle={sections.find((s) => s.key === addingTo)?.title ?? ""}
-        onSubmit={handleAddSubmit}
+        onAdd={handleAddFromLibrary}
       />
 
       <ReplaceExerciseSheet
