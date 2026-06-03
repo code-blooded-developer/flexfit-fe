@@ -1,6 +1,5 @@
 "use client";
 
-import FloatingParticles from "@/components/FloatingParticles";
 import { motion } from "motion/react";
 import {
   Play,
@@ -9,11 +8,18 @@ import {
   TrendingUp,
   ChevronRight,
   Zap,
+  AlertTriangle,
+  RotateCcw,
+  Loader2,
 } from "lucide-react";
 
 import AnimatedCounter from "../_components/AnimatedCounter";
 
 import { useRouter } from "next/navigation";
+import { useWorkout } from "@/hooks/useWorkout";
+import { useWorkoutStore } from "@/store/workoutStore";
+import type { MuscleGroup } from "@/types/workout";
+import Skeleton from "@/components/ui/Skeleton";
 
 const container = {
   animate: { transition: { staggerChildren: 0.1 } },
@@ -31,12 +37,32 @@ const item = {
   },
 };
 
+const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {
+  CHEST: "Chest Day",
+  BACK: "Back Day",
+  LEGS: "Leg Day",
+  SHOULDERS: "Shoulder Day",
+  BICEPS: "Biceps Day",
+  TRICEPS: "Triceps Day",
+  CORE: "Core Day",
+  GLUTES: "Glute Day",
+  HAMSTRINGS: "Hamstring Day",
+  CALVES: "Calf Day",
+  FULL_BODY: "Full Body Day",
+};
+
 export default function DashboardPage() {
   const router = useRouter();
+  useWorkout();
+
+  const { todayWorkout, isLoading, error } = useWorkoutStore();
+
+  const workoutTitle = todayWorkout
+    ? MUSCLE_GROUP_LABELS[todayWorkout.targetMuscle]
+    : "";
+
   return (
     <>
-      <FloatingParticles />
-
       <motion.div variants={item} className="px-6 pt-14 pb-2 relative z-10">
         <motion.p
           initial={{ opacity: 0, x: -10 }}
@@ -56,66 +82,124 @@ export default function DashboardPage() {
         </motion.h1>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{
-          delay: 0.3,
-          duration: 0.6,
-          ease: [0.25, 0.46, 0.45, 0.94],
-        }}
-        className="mx-6 mt-6 relative z-10"
-      >
-        <div className="rounded-3xl bg-card p-6 border border-border breathe-glow shimmer relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-8 translate-x-8" />
-          <motion.div
-            className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle, hsl(142 71% 45% / 0.08) 0%, transparent 70%)",
-            }}
-            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <div className="flex items-center gap-2 mb-1 relative z-10">
-            <motion.div
-              animate={{ rotate: [0, 15, -15, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Zap size={14} className="text-primary" />
-            </motion.div>
-            <span className="text-primary text-xs font-semibold uppercase tracking-wider">
-              Today&apos;s Workout
-            </span>
+      {isLoading && (
+        <div className="mx-6 mt-6 relative z-10 space-y-6">
+          <div className="rounded-3xl bg-card p-6 border border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <Loader2 size={14} className="text-primary animate-spin" />
+              <span className="text-primary text-xs font-semibold uppercase tracking-wider">
+                Loading today&apos;s workout
+              </span>
+            </div>
+            <Skeleton className="h-8 w-2/3 mt-2" />
+            <div className="flex gap-3 mt-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            <Skeleton className="h-14 w-full mt-6 rounded-2xl" />
           </div>
-          <h2 className="text-2xl font-bold font-display text-foreground mt-2 relative z-10">
-            Push Day
-          </h2>
-          <div className="flex items-center gap-4 mt-3 text-muted-foreground text-sm relative z-10">
-            <span className="flex items-center gap-1.5">
-              <Dumbbell size={14} />6 Exercises
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock size={14} />
-              45 min
-            </span>
+          <div className="grid grid-cols-3 gap-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-24 rounded-2xl" />
+            ))}
           </div>
-          <motion.button
-            onClick={() => router.push("/workout")}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center justify-center gap-2 w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-base relative z-10 glow-primary-intense"
-          >
-            <motion.div
-              animate={{ x: [0, 3, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <Play size={18} fill="currentColor" />
-            </motion.div>
-            Start Workout
-          </motion.button>
         </div>
-      </motion.div>
+      )}
+
+      {!isLoading && error && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-6 mt-6 relative z-10"
+        >
+          <div className="rounded-3xl bg-card p-6 border border-destructive/40">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
+              <AlertTriangle size={20} className="text-destructive" />
+            </div>
+            <h2 className="font-display text-lg font-bold text-foreground">
+              Couldn&apos;t load today&apos;s workout
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            <motion.button
+              onClick={() => router.refresh()}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center justify-center gap-2 w-full mt-5 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm"
+            >
+              <RotateCcw size={16} />
+              Retry
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
+
+      {!isLoading && !error && todayWorkout && (
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{
+            delay: 0.3,
+            duration: 0.6,
+            ease: [0.25, 0.46, 0.45, 0.94],
+          }}
+          className="mx-6 mt-6 relative z-10"
+        >
+          <div className="rounded-3xl bg-card p-6 border border-border breathe-glow shimmer relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-8 translate-x-8" />
+            <motion.div
+              className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, hsl(142 71% 45% / 0.08) 0%, transparent 70%)",
+              }}
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <div className="flex items-center gap-2 mb-1 relative z-10">
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Zap size={14} className="text-primary" />
+              </motion.div>
+              <span className="text-primary text-xs font-semibold uppercase tracking-wider">
+                Today&apos;s Workout
+              </span>
+            </div>
+
+            <h2 className="text-2xl font-bold font-display text-foreground mt-2 relative z-10">
+              {workoutTitle}
+            </h2>
+            <div className="flex items-center gap-4 mt-3 text-muted-foreground text-sm relative z-10">
+              <span className="flex items-center gap-1.5">
+                <Dumbbell size={14} />
+                {todayWorkout.exercises.length} Exercises
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Clock size={14} />
+                {todayWorkout.totalDurationMinutes ?? "-"} min
+              </span>
+            </div>
+            <motion.button
+              onClick={() => router.push("/workout")}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center justify-center gap-2 w-full mt-6 py-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-base relative z-10 glow-primary-intense"
+            >
+              <motion.div
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Play size={18} fill="currentColor" />
+              </motion.div>
+              Start Workout
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0 }}

@@ -1,7 +1,7 @@
 import { Home, Dumbbell, TrendingUp, User } from "lucide-react";
 import { motion } from "motion/react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const tabs = [
   { icon: Home, label: "Home", path: "/dashboard" },
@@ -12,12 +12,13 @@ const tabs = [
 
 export default function BottomNav() {
   const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-2xl border-t border-border/50 safe-bottom z-50">
       <div className="flex items-center justify-around py-2 px-4 max-w-md mx-auto">
         {tabs.map((tab) => {
-          const isActive = location.pathname === tab.path;
+          const isActive = pathname === tab.path;
           return (
             <motion.button
               key={tab.path}
