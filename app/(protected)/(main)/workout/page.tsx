@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { useWorkout } from "@/hooks/useWorkout";
+import { useWorkout, useReplaceExercise, useDeleteExercise } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
 import {
   mapWorkoutToSections,
@@ -30,6 +30,8 @@ export default function WorkoutPage() {
 
   useWorkout();
   const { todayWorkout, isLoading, error } = useWorkoutStore();
+  const replaceMutation = useReplaceExercise();
+  const deleteMutation = useDeleteExercise();
   const [workoutId, setWorkoutId] = useState<string | null>(null);
 
   if (todayWorkout && todayWorkout.id !== workoutId) {
@@ -59,14 +61,28 @@ export default function WorkoutPage() {
   const handleReplace = (sk: SectionKey, id: string) => setReplacing({ section: sk, id });
 
   const handleReplaceSelect = (sk: SectionKey, id: string, replacement: LibraryItem) => {
-    updateSection(sk, (exs) =>
-      exs.map((e) => (e.id === id ? { ...replacement, id, logs: e.logs } : e)),
+    replaceMutation.mutate(
+      { workoutId: todayWorkout!.id, exerciseId: id, alternativeId: replacement.alternativeId },
+      {
+        onSuccess: () => {
+          updateSection(sk, (exs) =>
+            exs.map((e) => (e.id === id ? { ...replacement, id, logs: e.logs } : e)),
+          );
+          setReplacing(null);
+        },
+      },
     );
-    setReplacing(null);
   };
 
   const handleDelete = (sk: SectionKey, id: string) => {
-    updateSection(sk, (exs) => exs.filter((e) => e.id !== id));
+    deleteMutation.mutate(
+      { workoutId: todayWorkout!.id, exerciseId: id },
+      {
+        onSuccess: () => {
+          updateSection(sk, (exs) => exs.filter((e) => e.id !== id));
+        },
+      },
+    );
   };
 
   const handleLog = (sk: SectionKey, exercise: Exercise) => setLogging({ section: sk, exercise });
@@ -154,6 +170,7 @@ export default function WorkoutPage() {
       <ReplaceExerciseSheet
         open={!!replacing}
         onOpenChange={(o) => { if (!o) setReplacing(null); }}
+        workoutId={todayWorkout?.id ?? null}
         replacing={replacing}
         onSelect={handleReplaceSelect}
       />

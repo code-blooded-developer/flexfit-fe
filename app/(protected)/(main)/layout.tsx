@@ -13,8 +13,8 @@ export default function MainLayout({
     <div className="min-h-screen bg-background pb-24 relative">
       <PageTransition>
         {children}
-        <BottomNav />
       </PageTransition>
+      <BottomNav />
     </div>
   );
 }

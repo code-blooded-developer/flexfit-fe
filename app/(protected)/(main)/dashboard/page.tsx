@@ -16,7 +16,7 @@ import {
 import AnimatedCounter from "../_components/AnimatedCounter";
 
 import { useRouter } from "next/navigation";
-import { useWorkout } from "@/hooks/useWorkout";
+import { useWorkout } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { MUSCLE_GROUP_LABELS } from "@/types/workout";
 import { Skeleton } from "@/components/ui/skeleton";

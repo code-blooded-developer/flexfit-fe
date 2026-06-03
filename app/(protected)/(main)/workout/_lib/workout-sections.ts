@@ -3,6 +3,7 @@ import { Flame, Dumbbell, Wind, type LucideIcon } from "lucide-react";
 import type {
   MuscleGroup,
   Workout,
+  WorkoutExercise,
   WorkoutSet as ApiWorkoutSet,
 } from "@/types/workout";
 
@@ -104,6 +105,7 @@ const PHASE_TO_TYPE: Record<string, ExerciseType> = {
 };
 
 export type LibraryItem = {
+  alternativeId: string;
   name: string;
   muscle: string;
   image: string;
@@ -116,22 +118,18 @@ export type LibraryItem = {
   distance?: string;
 };
 
-export const exerciseLibrary: LibraryItem[] = [
-  { name: "Jumping Jacks", muscle: "Full Body", image: "🤸", gradient: pickGradient("Jumping Jacks"), type: "cardio", time: "2 min" },
-  { name: "Arm Circles", muscle: "Shoulders", image: "💫", gradient: pickGradient("Arm Circles"), type: "mobility", reps: "20 each" },
-  { name: "Treadmill Walk", muscle: "Cardio", image: "🏃", gradient: pickGradient("Treadmill Walk"), type: "cardio", time: "5 min" },
-  { name: "Bench Press", muscle: "Chest", image: "🏋️", gradient: pickGradient("Bench Press"), type: "strength", sets: 4, reps: "8-10", weight: "60 kg" },
-  { name: "Incline Dumbbell Press", muscle: "Upper Chest", image: "💪", gradient: pickGradient("Incline Dumbbell Press"), type: "strength", sets: 3, reps: "10-12", weight: "22 kg" },
-  { name: "Shoulder Press", muscle: "Shoulders", image: "🏋️", gradient: pickGradient("Shoulder Press"), type: "strength", sets: 4, reps: "8-10", weight: "40 kg" },
-  { name: "Lateral Raises", muscle: "Delts", image: "💪", gradient: pickGradient("Lateral Raises"), type: "strength", sets: 3, reps: "12-15", weight: "10 kg" },
-  { name: "Tricep Pushdown", muscle: "Triceps", image: "💪", gradient: pickGradient("Tricep Pushdown"), type: "strength", sets: 3, reps: "12-15", weight: "25 kg" },
-  { name: "Pull Ups", muscle: "Back", image: "🤾", gradient: pickGradient("Pull Ups"), type: "strength", sets: 4, reps: "8-10", weight: "BW" },
-  { name: "Back Squat", muscle: "Legs", image: "🦵", gradient: pickGradient("Back Squat"), type: "strength", sets: 5, reps: "5-8", weight: "90 kg" },
-  { name: "Plank", muscle: "Core", image: "🧘", gradient: pickGradient("Plank"), type: "mobility", time: "60 s" },
-  { name: "Hamstring Stretch", muscle: "Hamstrings", image: "🧘", gradient: pickGradient("Hamstring Stretch"), type: "mobility", time: "45 s" },
-  { name: "Child's Pose", muscle: "Back", image: "🧎", gradient: pickGradient("Child's Pose"), type: "mobility", time: "60 s" },
-  { name: "Cat-Cow", muscle: "Spine", image: "🐈", gradient: pickGradient("Cat-Cow"), type: "mobility", reps: "10" },
-];
+export function workoutExerciseToLibraryItem(ex: WorkoutExercise): LibraryItem {
+  return {
+    alternativeId: ex.exerciseId,
+    name: ex.exerciseName,
+    muscle: MUSCLE_GROUP_NAMES[ex.primaryMuscle] ?? ex.primaryMuscle,
+    image: MUSCLE_GROUP_EMOJI[ex.primaryMuscle] ?? "🏋️",
+    gradient: pickGradient(ex.exerciseName),
+    type: PHASE_TO_TYPE[ex.phase] ?? "strength",
+    sets: ex.targetSets,
+    reps: ex.targetReps,
+  };
+}
 
 /* ── Helpers ── */
 
