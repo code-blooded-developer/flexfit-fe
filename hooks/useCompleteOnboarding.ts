@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { onboardingService } from "@/services/onboardingService";
 
-import { ApiError } from "@/lib/apiError";
+import { normalizeError } from "@/lib/errorUtils";
 
 import type { OnboardingPayload } from "@/types/onboarding";
 
@@ -27,17 +27,13 @@ export function useCompleteOnboarding() {
     try {
       await mutation.mutateAsync(payload);
     } catch (err) {
-      if (err instanceof ApiError) {
-        throw new Error(err.message);
-      }
-
-      throw new Error("Something went wrong. Please try again.");
+      throw new Error(normalizeError(err));
     }
   };
 
   return {
     completeOnboarding,
     isLoading: mutation.isPending,
-    error: mutation.error instanceof Error ? mutation.error.message : null,
+    error: mutation.error ? normalizeError(mutation.error) : null,
   };
 }

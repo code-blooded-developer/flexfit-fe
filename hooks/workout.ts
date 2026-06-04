@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { workoutService } from "@/services/workoutService";
 import { useWorkoutStore } from "@/store/workoutStore";
+import { normalizeError } from "@/lib/errorUtils";
 import type { Workout, WorkoutExercise, ExerciseCategory } from "@/types/workout";
 
 /* ── Query: today's workout ── */
@@ -30,7 +31,7 @@ export function useWorkout() {
 
   useEffect(() => {
     if (query.error) {
-      setError(query.error instanceof Error ? query.error.message : "Failed to load workout");
+      setError(normalizeError(query.error, "Failed to load workout"));
     }
   }, [query.error, setError]);
 
@@ -43,7 +44,7 @@ export function useAlternatives(
   workoutId: string | null,
   category?: ExerciseCategory | null,
 ) {
-  return useQuery<WorkoutExercise[]>({
+  const query = useQuery<WorkoutExercise[]>({
     queryKey: ["alternatives", workoutId, category],
     queryFn: () => {
       const params: { category?: ExerciseCategory } = {};
@@ -53,6 +54,12 @@ export function useAlternatives(
     enabled: !!workoutId && !!category,
     retry: false,
   });
+
+  return {
+    data: query.data,
+    isLoading: query.isPending,
+    error: query.error ? normalizeError(query.error) : null,
+  };
 }
 
 /* ── Mutation: add exercises to workout ── */
@@ -64,14 +71,20 @@ type AddExercisesVars = {
 
 export function useAddExercises() {
   const qc = useQueryClient();
-
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: ({ workoutId, exerciseIds }: AddExercisesVars) =>
       workoutService.addExercises(workoutId, exerciseIds),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["todayWorkout"] });
     },
   });
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error ? normalizeError(mutation.error) : null,
+  };
 }
 
 /* ── Mutation: replace exercise ── */
@@ -84,14 +97,20 @@ type ReplaceVars = {
 
 export function useReplaceExercise() {
   const qc = useQueryClient();
-
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: ({ workoutId, exerciseId, alternativeId }: ReplaceVars) =>
       workoutService.replaceExercise(workoutId, exerciseId, alternativeId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["todayWorkout"] });
     },
   });
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error ? normalizeError(mutation.error) : null,
+  };
 }
 
 /* ── Mutation: delete exercise ── */
@@ -103,12 +122,18 @@ type DeleteVars = {
 
 export function useDeleteExercise() {
   const qc = useQueryClient();
-
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: ({ workoutId, exerciseId }: DeleteVars) =>
       workoutService.deleteExercise(workoutId, exerciseId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["todayWorkout"] });
     },
   });
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error ? normalizeError(mutation.error) : null,
+  };
 }

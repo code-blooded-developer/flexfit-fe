@@ -47,7 +47,7 @@ export default function ReplaceExerciseSheet({ open, onOpenChange, workoutId, re
               Loading alternatives...
             </div>
           ) : error ? (
-            <p className="text-sm text-destructive text-center py-4">{error.message ?? "Failed to load alternatives"}</p>
+            <p className="text-sm text-destructive text-center py-4">{error ?? "Failed to load alternatives"}</p>
           ) : (
             items.map((lib) => (
               <motion.button

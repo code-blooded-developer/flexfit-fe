@@ -123,9 +123,7 @@ function EquipmentSelectionContent() {
         <div className="flex flex-col items-center justify-center gap-2 px-6 py-20 text-center">
           <AlertCircle size={32} className="text-muted-foreground" />
           <p className="text-muted-foreground text-sm">
-            {fetchError instanceof Error
-              ? fetchError.message
-              : "Failed to load equipments. Please try again."}
+            {fetchError ?? "Failed to load equipments. Please try again."}
           </p>
         </div>
       )}

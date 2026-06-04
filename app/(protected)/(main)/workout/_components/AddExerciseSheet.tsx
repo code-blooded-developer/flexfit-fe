@@ -128,7 +128,7 @@ export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectio
               Loading exercises...
             </div>
           ) : error ? (
-            <p className="text-sm text-destructive text-center py-4">{error.message ?? "Failed to load exercises"}</p>
+            <p className="text-sm text-destructive text-center py-4">{error ?? "Failed to load exercises"}</p>
           ) : (
             filteredItems.map((lib) => {
               const checked = selectedIds.has(lib.alternativeId);

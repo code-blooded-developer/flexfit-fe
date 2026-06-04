@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { profileService } from "@/services/profileService";
+import { normalizeError } from "@/lib/errorUtils";
 
 export function useUserProfile() {
   const query = useQuery({
@@ -15,5 +16,6 @@ export function useUserProfile() {
     profile: query.data,
     isLoading: query.isPending,
     isError: query.isError,
+    error: query.error ? normalizeError(query.error) : null,
   };
 }

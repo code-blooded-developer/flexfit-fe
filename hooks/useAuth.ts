@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 
 import { authService } from "@/services/authService";
+import { normalizeError } from "@/lib/errorUtils";
 
 export function useAuth() {
   const router = useRouter();
@@ -49,12 +50,11 @@ export function useAuth() {
 
   const isLoading = signUpMutation.isPending || signInMutation.isPending;
 
-  const error =
-    signUpMutation.error instanceof Error
-      ? signUpMutation.error.message
-      : signInMutation.error instanceof Error
-        ? signInMutation.error.message
-        : null;
+  const error = signUpMutation.error
+    ? normalizeError(signUpMutation.error)
+    : signInMutation.error
+      ? normalizeError(signInMutation.error)
+      : null;
 
   return { signUp, signIn, logout, error, isLoading };
 }
