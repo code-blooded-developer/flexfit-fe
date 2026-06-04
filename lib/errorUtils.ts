@@ -5,9 +5,5 @@ export function normalizeError(err: unknown, fallback = "Something went wrong. P
     return err.message;
   }
 
-  if (err instanceof Error) {
-    return err.message;
-  }
-
   return fallback;
 }
