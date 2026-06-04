@@ -249,7 +249,7 @@ export default function WorkoutPage() {
   }
 
   return (
-    <div className="pb-40">
+    <div className="pb-20">
       <WorkoutHeader
         exerciseCount={totalExercises}
         durationMinutes={todayWorkout.totalDurationMinutes}
