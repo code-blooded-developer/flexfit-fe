@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useWorkout,
   useReplaceExercise,
@@ -32,6 +33,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 export default function WorkoutPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [sections, setSections] = useState<Section[]>([]);
   const [addingTo, setAddingTo] = useState<SectionKey | null>(null);
   const [replacing, setReplacing] = useState<{
@@ -226,7 +228,11 @@ export default function WorkoutPage() {
           </h2>
           <p className="text-sm text-muted-foreground mt-1">{error}</p>
           <motion.button
-            onClick={() => router.refresh()}
+            onClick={() => {
+              useWorkoutStore.getState().setLoading(true);
+              useWorkoutStore.getState().setError(null);
+              queryClient.resetQueries({ queryKey: ["todayWorkout"] });
+            }}
             whileTap={{ scale: 0.97 }}
             className="flex items-center justify-center gap-2 w-full mt-5 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm"
           >
