@@ -52,6 +52,7 @@ export type WorkoutExercise = {
   sortOrder: number;
   targetSets: number;
   targetReps: string;
+  targetDurationSeconds: number | null;
   restSeconds: number | null;
   notes: string | null;
   mediaUrl: string | null;

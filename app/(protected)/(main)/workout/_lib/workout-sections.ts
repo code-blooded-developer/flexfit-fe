@@ -31,6 +31,7 @@ export type Exercise = {
   sets?: number;
   reps?: string;
   weight?: string;
+  time?: string;
   type: ExerciseType;
   logs: LogEntry[];
 };
@@ -137,6 +138,7 @@ export function workoutExerciseToLibraryItem(ex: WorkoutExercise): LibraryItem {
     type: PHASE_TO_TYPE[ex.phase] ?? "strength",
     sets: ex.targetSets,
     reps: ex.targetReps,
+    time: ex.targetDurationSeconds != null ? formatSetTime(ex.targetDurationSeconds) : undefined,
   };
 }
 
@@ -203,6 +205,7 @@ export function mapWorkoutToSections(workout: Workout): Section[] {
       sets: ex.targetSets,
       reps: ex.targetReps,
       weight: firstSet?.weight != null ? `${firstSet.weight} kg` : undefined,
+      time: ex.targetDurationSeconds != null ? formatSetTime(ex.targetDurationSeconds) : undefined,
       type: PHASE_TO_TYPE[ex.phase] ?? "strength",
       logs: ex.sets.map(mapSetToLogEntry),
     });

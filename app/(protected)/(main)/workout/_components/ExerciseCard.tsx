@@ -1,12 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import {
-  MoreVertical,
-  ClipboardList,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
+import { MoreVertical, ClipboardList, RefreshCw, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,10 +19,20 @@ type Props = {
   onDelete: (sectionKey: SectionKey, exerciseId: string) => void;
 };
 
-export default function ExerciseCard({ exercise: ex, sectionKey, onLog, onReplace, onDelete }: Props) {
+export default function ExerciseCard({
+  exercise: ex,
+  sectionKey,
+  onLog,
+  onReplace,
+  onDelete,
+}: Props) {
   const meta: { label: string; value: string }[] = [];
-  if (ex.sets) meta.push({ label: "sets", value: String(ex.sets) });
-  if (ex.reps) meta.push({ label: "reps", value: ex.reps });
+  if (ex.time) {
+    meta.push({ label: "", value: ex.time });
+  } else {
+    if (ex.sets) meta.push({ label: "sets", value: String(ex.sets) });
+    if (ex.reps) meta.push({ label: "reps", value: ex.reps });
+  }
   if (ex.weight) meta.push({ label: "", value: ex.weight });
 
   return (

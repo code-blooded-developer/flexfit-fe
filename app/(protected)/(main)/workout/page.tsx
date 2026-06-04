@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useWorkout,
@@ -32,7 +31,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 export default function WorkoutPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [sections, setSections] = useState<Section[]>([]);
   const [addingTo, setAddingTo] = useState<SectionKey | null>(null);
