@@ -1,3 +1,4 @@
+import { buildApiUrl } from "@/lib/apiBase";
 import { ApiResponse } from "@/types/api";
 import { ApiError } from "@/lib/apiError";
 
@@ -5,14 +6,13 @@ type RequestOptions = RequestInit & {
   params?: Record<string, string>;
 };
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
-
 async function tryRefresh(): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+    const res = await fetch(buildApiUrl("/auth/refresh"), {
       method: "POST",
       credentials: "include",
     });
+
     const json = await res.json();
     return json.success === true;
   } catch {
@@ -27,14 +27,17 @@ async function request<T>(
 ): Promise<T> {
   const { params, ...init } = options;
 
-  const url = new URL(`${BASE_URL}${endpoint}`);
+  const url = buildApiUrl(endpoint);
+
+  const finalUrl = new URL(url, window.location.origin);
+
   if (params) {
     Object.entries(params).forEach(([key, val]) =>
-      url.searchParams.set(key, val),
+      finalUrl.searchParams.set(key, val),
     );
   }
 
-  const res = await fetch(url.toString(), {
+  const res = await fetch(finalUrl.toString(), {
     ...init,
     credentials: "include",
     headers: {
@@ -45,15 +48,14 @@ async function request<T>(
 
   const json: ApiResponse<T> = await res.json();
 
-  // Access token expired mid-session — try refresh once then retry
   if ((json.status === 401 || json.status === 403) && retry) {
     const refreshed = await tryRefresh();
     if (refreshed) {
       return request<T>(endpoint, options, false);
     }
-    // Refresh also failed — session is dead
+
     window.location.href = "/login";
-    throw new ApiError("Session expired. Please log in again.", 401);
+    throw new ApiError("Session expired", 401);
   }
 
   if (!json.success) {
