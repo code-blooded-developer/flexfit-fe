@@ -1,19 +1,48 @@
-import { buildApiUrl } from "@/lib/apiBase";
-import { ApiResponse } from "@/types/api";
 import { ApiError } from "@/lib/apiError";
+import { ApiResponse } from "@/types/api";
 
 type RequestOptions = RequestInit & {
   params?: Record<string, string>;
 };
 
+const API_BASE =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:8080/api/v1"
+    : "/api/v1";
+
+const buildUrl = (
+  endpoint: string,
+  params?: Record<string, string>,
+): string => {
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  const url = new URL(
+    `${API_BASE}${cleanEndpoint}`,
+    typeof window !== "undefined" ? window.location.origin : "http://localhost",
+  );
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
+    });
+  }
+
+  return url.toString();
+};
+
 async function tryRefresh(): Promise<boolean> {
   try {
-    const res = await fetch(buildApiUrl("/auth/refresh"), {
+    const res = await fetch(buildUrl("/auth/refresh"), {
       method: "POST",
       credentials: "include",
     });
 
-    const json = await res.json();
+    if (!res.ok) {
+      return false;
+    }
+
+    const json: ApiResponse<unknown> = await res.json();
+
     return json.success === true;
   } catch {
     return false;
@@ -27,17 +56,7 @@ async function request<T>(
 ): Promise<T> {
   const { params, ...init } = options;
 
-  const url = buildApiUrl(endpoint);
-
-  const finalUrl = new URL(url, window.location.origin);
-
-  if (params) {
-    Object.entries(params).forEach(([key, val]) =>
-      finalUrl.searchParams.set(key, val),
-    );
-  }
-
-  const res = await fetch(finalUrl.toString(), {
+  const res = await fetch(buildUrl(endpoint, params), {
     ...init,
     credentials: "include",
     headers: {
@@ -50,11 +69,15 @@ async function request<T>(
 
   if ((json.status === 401 || json.status === 403) && retry) {
     const refreshed = await tryRefresh();
+
     if (refreshed) {
       return request<T>(endpoint, options, false);
     }
 
-    window.location.href = "/login";
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+
     throw new ApiError("Session expired", 401);
   }
 
@@ -67,7 +90,10 @@ async function request<T>(
 
 const api = {
   get: <T>(endpoint: string, options?: RequestOptions) =>
-    request<T>(endpoint, { ...options, method: "GET" }),
+    request<T>(endpoint, {
+      ...options,
+      method: "GET",
+    }),
 
   post: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, {
@@ -84,7 +110,10 @@ const api = {
     }),
 
   delete: <T>(endpoint: string, options?: RequestOptions) =>
-    request<T>(endpoint, { ...options, method: "DELETE" }),
+    request<T>(endpoint, {
+      ...options,
+      method: "DELETE",
+    }),
 };
 
 export default api;
