@@ -9,7 +9,10 @@ const protectedRoutes = [
 ];
 const authRoutes = ["/auth", "/login", "/signup", "/forgot-password"];
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:8080/api/v1"
+    : "/api/v1";
 
 async function refreshAccessToken(
   request: NextRequest,

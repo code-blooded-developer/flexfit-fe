@@ -31,7 +31,7 @@ Backend is Java Spring Boot at `http://localhost:8080`.
 ### API
 
 - All requests go through `lib/api.ts`
-- Base URL: `NEXT_PUBLIC_API_URL/api/v1`
+- Base URL: `/api/v1`
 - Backend uses a standard envelope: `{ success, status, message, data, timestamp }`
 - `lib/api.ts` unwraps the envelope — callers receive `data` directly
 - Errors are thrown as `ApiError` from `lib/apiError.ts`
@@ -69,10 +69,6 @@ Backend is Java Spring Boot at `http://localhost:8080`.
 - `bun dev` — start dev server
 - `bun build` — production build
 - `bun lint` — run ESLint
-
-## Environment Variables
-
-- `NEXT_PUBLIC_API_URL` — Java backend base URL (e.g. http://localhost:8080)
 
 ## Do Not
 

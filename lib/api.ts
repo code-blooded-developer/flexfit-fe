@@ -30,23 +30,27 @@ const buildUrl = (
   return url.toString();
 };
 
+let refreshPromise: Promise<boolean> | null = null;
+
 async function tryRefresh(): Promise<boolean> {
-  try {
-    const res = await fetch(buildUrl("/auth/refresh"), {
-      method: "POST",
-      credentials: "include",
-    });
+  if (refreshPromise) return refreshPromise;
 
-    if (!res.ok) {
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(buildUrl("/auth/refresh"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      return res.ok;
+    } catch {
       return false;
+    } finally {
+      refreshPromise = null;
     }
+  })();
 
-    const json: ApiResponse<unknown> = await res.json();
-
-    return json.success === true;
-  } catch {
-    return false;
-  }
+  return refreshPromise;
 }
 
 async function request<T>(
@@ -56,18 +60,21 @@ async function request<T>(
 ): Promise<T> {
   const { params, ...init } = options;
 
-  const res = await fetch(buildUrl(endpoint, params), {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(endpoint, params), {
+      ...init,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...init.headers,
+      },
+    });
+  } catch {
+    throw new ApiError("Network error", 0);
+  }
 
-  const json: ApiResponse<T> = await res.json();
-
-  if ((json.status === 401 || json.status === 403) && retry) {
+  if ((res.status === 401 || res.status === 403) && retry) {
     const refreshed = await tryRefresh();
 
     if (refreshed) {
@@ -79,6 +86,19 @@ async function request<T>(
     }
 
     throw new ApiError("Session expired", 401);
+  }
+
+  let json: ApiResponse<T>;
+  try {
+    json = await res.json();
+  } catch {
+    if (!res.ok) {
+      throw new ApiError(
+        `Request failed with status ${res.status}`,
+        res.status,
+      );
+    }
+    throw new ApiError("Invalid response format", res.status);
   }
 
   if (!json.success) {
