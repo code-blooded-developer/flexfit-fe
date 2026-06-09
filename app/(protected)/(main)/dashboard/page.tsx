@@ -20,6 +20,7 @@ import { useWorkout } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { MUSCLE_GROUP_LABELS } from "@/types/workout";
 import { Skeleton } from "@/components/ui/skeleton";
+import InstallAppCard from "@/components/InstallAppCard";
 
 const container = {
   animate: { transition: { staggerChildren: 0.1 } },
@@ -67,6 +68,8 @@ export default function DashboardPage() {
           Let&apos;s Train 💪
         </motion.h1>
       </motion.div>
+
+      <InstallAppCard />
 
       {isLoading && (
         <div className="mx-6 mt-6 relative z-10 space-y-6">
@@ -235,6 +238,8 @@ export default function DashboardPage() {
           ))}
         </motion.div>
       </motion.div>
+
+      <InstallAppCard />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
