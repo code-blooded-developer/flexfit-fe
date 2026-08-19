@@ -39,12 +39,15 @@ Open [http://localhost:3000](http://localhost:3000).
 app/              Next.js App Router pages & layouts
 ├── (auth)/       Auth flow (login, signup, forgot password)
 ├── (public)/     Public splash screen
-└── (protected)/  Authenticated routes (onboarding, dashboard)
-components/       Shared UI components
-hooks/            Custom React hooks (useAuth, useUserProfile, …)
-lib/              Utility functions (API client, narrow, fieldClass)
-services/         API call functions (auth, profile, onboarding)
-store/            Zustand stores (auth)
+└── (protected)/  Authenticated routes
+    ├── onboarding/           Multi-step onboarding wizard
+    ├── equipment-selection/  Equipment and variant configuration
+    └── (main)/               Core app shell with bottom nav (dashboard, workout)
+components/       Shared UI components & primitives
+hooks/            Custom React hooks & query hooks (useAuth, useUserProfile, workout, …)
+lib/              Utility functions (API client, apiError, errorUtils, fieldClass, narrow)
+services/         API call functions (auth, profile, onboarding, equipment, workout)
+store/            Zustand client stores (workoutStore, equipmentStore)
 types/            TypeScript type definitions
 ```
 

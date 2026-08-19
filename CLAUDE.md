@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-Next.js 15 App Router frontend for FlexFit — a personalized fitness app.
+Next.js 16 App Router frontend for FlexFit — a personalized fitness app.
 Backend is Java Spring Boot at `http://localhost:8080`.
 
 ## Tech Stack
 
-- Framework: Next.js 15 (App Router)
+- Framework: Next.js 16 (App Router)
 - Language: TypeScript
-- Styling: Tailwind CSS
+- Styling: Tailwind CSS v4
 - Animations: Motion (motion/react)
 - State: Zustand
 - Server state: TanStack Query
@@ -21,11 +21,11 @@ Backend is Java Spring Boot at `http://localhost:8080`.
 ### Folder Structure
 
 - `app/` — Next.js App Router pages and layouts
-- `components/` — Shared reusable components
-- `hooks/` — Custom React hooks (e.g. useAuth)
-- `lib/` — Utility/config (api.ts, apiError.ts)
-- `services/` — API call functions grouped by domain
-- `store/` — Zustand stores
+- `components/` — Shared reusable components & UI primitives
+- `hooks/` — Custom React hooks & TanStack Query hooks (e.g. useAuth, useUserProfile, workout)
+- `lib/` — Utility/config (api.ts, apiError.ts, errorUtils.ts)
+- `services/` — API call functions grouped by domain (auth, onboarding, profile, equipment, workout)
+- `store/` — Zustand client stores (workoutStore, equipmentStore)
 - `types/` — TypeScript types grouped by domain
 
 ### API
@@ -37,12 +37,13 @@ Backend is Java Spring Boot at `http://localhost:8080`.
 - Errors are thrown as `ApiError` from `lib/apiError.ts`
 - Auth tokens are HttpOnly cookies set by BE — never handled on frontend
 - Always use `credentials: 'include'` (already handled in lib/api.ts)
-- Route protection is handled in `proxy.ts` (Next.js 16 renamed middleware → proxy)
+- Route protection is handled in `proxy.ts` (Next.js 16 proxy convention)
 
 ### Auth
 
-- Auth state lives in `store/authStore.ts`
-- Use `useAuth()` hook from `hooks/useAuth.ts` in pages
+- Auth state and session lifecycle are cookie-driven via HttpOnly cookies and `proxy.ts`
+- Use `useAuth()` hook from `hooks/useAuth.ts` for sign in, sign up, and logout mutations
+- Use `useUserProfile()` hook from `hooks/useUserProfile.ts` for profile completeness status
 - After sign in: redirect to `/dashboard` if profile complete, else `/onboarding`
 - After sign up: always redirect to `/onboarding`
 
