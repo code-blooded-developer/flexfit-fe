@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ArrowLeft, Clock, Dumbbell } from "lucide-react";
+import { ArrowLeft, Clock, Dumbbell, Repeat } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { MuscleGroup } from "@/types/workout";
@@ -10,11 +10,13 @@ import { MUSCLE_GROUP_NAMES } from "../_lib/workout-sections";
 type Props = {
   targetMuscle?: MuscleGroup | string | null;
   durationMinutes: number | null;
+  onSwap?: () => void;
 };
 
 export default function WorkoutHeader({
   targetMuscle,
   durationMinutes,
+  onSwap,
 }: Props) {
   const router = useRouter();
   const muscleName = targetMuscle
@@ -30,7 +32,8 @@ export default function WorkoutHeader({
       <motion.button
         whileTap={{ scale: 0.9 }}
         onClick={() => router.push("/dashboard")}
-        className="p-2 -ml-2 rounded-xl active:bg-secondary"
+        className="p-2 -ml-2 rounded-xl active:bg-secondary cursor-pointer"
+        aria-label="Back to dashboard"
       >
         <ArrowLeft size={22} className="text-foreground" />
       </motion.button>
@@ -47,6 +50,17 @@ export default function WorkoutHeader({
           </span>
         </div>
       </div>
+
+      {onSwap && (
+        <motion.button
+          whileTap={{ scale: 0.92 }}
+          onClick={onSwap}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-semibold shrink-0 cursor-pointer active:bg-secondary/70 transition-colors"
+        >
+          <Repeat size={14} />
+          Swap
+        </motion.button>
+      )}
     </motion.div>
   );
 }

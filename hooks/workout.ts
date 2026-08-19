@@ -6,7 +6,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workoutService } from "@/services/workoutService";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { normalizeError } from "@/lib/errorUtils";
-import type { Workout, WorkoutExercise, ExerciseCategory, MuscleGroup } from "@/types/workout";
+import type {
+  Workout,
+  WorkoutExercise,
+  ExerciseCategory,
+  MuscleGroup,
+  AlternateMuscle,
+} from "@/types/workout";
 
 /* ── Query: today's workout ── */
 
@@ -36,6 +42,30 @@ export function useWorkout() {
   }, [query.error, setError]);
 
   return query;
+}
+
+/* ── Query: alternate muscles ── */
+
+export function useAlternateMuscles(
+  currentMuscle?: MuscleGroup | string | null,
+  enabled: boolean = true,
+) {
+  const query = useQuery<AlternateMuscle[]>({
+    queryKey: ["alternateMuscles", currentMuscle],
+    queryFn: () => workoutService.getAlternateMuscles(currentMuscle),
+    enabled: enabled && !!currentMuscle,
+    retry: false,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isPending,
+    isError: query.isError,
+    error: query.error
+      ? normalizeError(query.error, "Failed to load alternate muscles")
+      : null,
+    refetch: query.refetch,
+  };
 }
 
 /* ── Query: exercise alternatives ── */
@@ -139,3 +169,38 @@ export function useDeleteExercise() {
     error: mutation.error ? normalizeError(mutation.error) : null,
   };
 }
+
+/* ── Mutation: swap today's workout muscle ── */
+
+export function useSwapWorkout() {
+  const qc = useQueryClient();
+  const { setTodayWorkout } = useWorkoutStore();
+
+  const mutation = useMutation({
+    mutationFn: (muscle: MuscleGroup | string) =>
+      workoutService.swapTodayWorkout(muscle),
+    onSuccess: (newWorkout) => {
+      setTodayWorkout(newWorkout);
+      qc.setQueryData(["todayWorkout"], newWorkout);
+      qc.invalidateQueries({
+        queryKey: ["todayWorkout"],
+        refetchType: "none",
+      });
+      qc.invalidateQueries({
+        queryKey: ["alternateMuscles"],
+        refetchType: "none",
+      });
+    },
+  });
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error
+      ? normalizeError(mutation.error, "Failed to swap workout")
+      : null,
+    reset: mutation.reset,
+  };
+}
+

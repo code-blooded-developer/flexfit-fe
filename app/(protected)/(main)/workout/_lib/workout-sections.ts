@@ -62,7 +62,7 @@ export const MUSCLE_GROUP_NAMES: Record<MuscleGroup, string> = {
   FULL_BODY: "Full Body",
 };
 
-const MUSCLE_GROUP_EMOJI: Record<MuscleGroup, string> = {
+export const MUSCLE_GROUP_EMOJI: Record<MuscleGroup, string> = {
   CHEST: "🏋️",
   BACK: "🤾",
   LEGS: "🦵",

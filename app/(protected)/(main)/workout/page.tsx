@@ -24,6 +24,7 @@ import ExerciseSection from "./_components/ExerciseSection";
 import AddExerciseSheet from "./_components/AddExerciseSheet";
 import ReplaceExerciseSheet from "./_components/ReplaceExerciseSheet";
 import LogSetSheet from "./_components/LogSetSheet";
+import SwapMuscleSheet from "./_components/SwapMuscleSheet";
 import StartWorkoutButton from "./_components/StartWorkoutButton";
 import { Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +34,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 export default function WorkoutPage() {
   const queryClient = useQueryClient();
   const [sections, setSections] = useState<Section[]>([]);
+  const [swapOpen, setSwapOpen] = useState(false);
   const [addingTo, setAddingTo] = useState<SectionKey | null>(null);
   const [replacing, setReplacing] = useState<{
     section: SectionKey;
@@ -255,6 +257,13 @@ export default function WorkoutPage() {
       <WorkoutHeader
         targetMuscle={todayWorkout.targetMuscle}
         durationMinutes={todayWorkout.totalDurationMinutes}
+        onSwap={() => setSwapOpen(true)}
+      />
+
+      <SwapMuscleSheet
+        open={swapOpen}
+        onOpenChange={setSwapOpen}
+        currentMuscle={todayWorkout.targetMuscle}
       />
 
       <div className="px-6 mt-2 flex flex-col gap-8">

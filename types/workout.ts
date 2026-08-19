@@ -67,3 +67,11 @@ export type Workout = {
   status: WorkoutStatus;
   exercises: WorkoutExercise[];
 };
+
+export type AlternateMuscle = {
+  splitDayIndex: number;
+  name: string;
+  muscle: MuscleGroup;
+  targetMuscles: MuscleGroup[];
+};
+
