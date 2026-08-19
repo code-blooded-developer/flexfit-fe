@@ -176,8 +176,6 @@ export default function WorkoutPage() {
     );
   };
 
-  const totalExercises = sections.reduce((a, s) => a + s.exercises.length, 0);
-
   if (isLoading) {
     return (
       <div className="px-6 mt-2 flex flex-col gap-8">
@@ -255,7 +253,7 @@ export default function WorkoutPage() {
   return (
     <div className="pb-20">
       <WorkoutHeader
-        exerciseCount={totalExercises}
+        targetMuscle={todayWorkout.targetMuscle}
         durationMinutes={todayWorkout.totalDurationMinutes}
       />
 

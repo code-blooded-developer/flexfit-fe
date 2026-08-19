@@ -4,16 +4,22 @@ import { motion } from "motion/react";
 import { ArrowLeft, Clock, Dumbbell } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import type { MuscleGroup } from "@/types/workout";
+import { MUSCLE_GROUP_NAMES } from "../_lib/workout-sections";
+
 type Props = {
-  exerciseCount: number;
+  targetMuscle?: MuscleGroup | string | null;
   durationMinutes: number | null;
 };
 
 export default function WorkoutHeader({
-  exerciseCount,
+  targetMuscle,
   durationMinutes,
 }: Props) {
   const router = useRouter();
+  const muscleName = targetMuscle
+    ? (MUSCLE_GROUP_NAMES[targetMuscle as MuscleGroup] ?? targetMuscle)
+    : "-";
 
   return (
     <motion.div
@@ -34,7 +40,7 @@ export default function WorkoutHeader({
         </h1>
         <div className="flex items-center gap-3 text-muted-foreground text-xs mt-0.5">
           <span className="flex items-center gap-1">
-            <Dumbbell size={12} /> {exerciseCount} exercises
+            <Dumbbell size={12} /> {muscleName}
           </span>
           <span className="flex items-center gap-1">
             <Clock size={12} /> {durationMinutes ?? "-"} min
@@ -44,3 +50,4 @@ export default function WorkoutHeader({
     </motion.div>
   );
 }
+
