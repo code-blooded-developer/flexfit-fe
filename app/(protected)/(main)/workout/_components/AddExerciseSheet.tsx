@@ -20,14 +20,23 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workoutId: string | null;
+  muscle?: MuscleGroup | null;
   sectionKey: SectionKey | null;
   sectionTitle: string;
   onAdd: (sectionKey: SectionKey, items: LibraryItem[]) => void;
 };
 
-export default function AddExerciseSheet({ open, onOpenChange, workoutId, sectionKey, sectionTitle, onAdd }: Props) {
+export default function AddExerciseSheet({
+  open,
+  onOpenChange,
+  workoutId,
+  muscle,
+  sectionKey,
+  sectionTitle,
+  onAdd,
+}: Props) {
   const phase: ExerciseCategory | null = sectionKey ? (SECTION_TO_PHASE[sectionKey] as ExerciseCategory) : null;
-  const { data, isLoading, error } = useAlternatives(workoutId, phase);
+  const { data, isLoading, error } = useAlternatives(workoutId, phase, muscle);
 
   const items = useMemo(
     () => (data ?? []).map(workoutExerciseToLibraryItem),

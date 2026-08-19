@@ -1,11 +1,11 @@
 import api from "@/lib/api";
-import type { Workout, WorkoutExercise, ExerciseCategory } from "@/types/workout";
+import type { Workout, WorkoutExercise, ExerciseCategory, MuscleGroup } from "@/types/workout";
 
 export const workoutService = {
   getTodayWorkout: () => api.get<Workout>("/workouts/today"),
   getAlternatives: (
     workoutId: string,
-    params?: { category?: ExerciseCategory },
+    params?: { category?: ExerciseCategory; muscle?: MuscleGroup },
   ) =>
     api.get<WorkoutExercise[]>(
       `/workouts/${workoutId}/alternatives`,

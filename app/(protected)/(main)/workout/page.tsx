@@ -281,6 +281,7 @@ export default function WorkoutPage() {
           if (!o) setAddingTo(null);
         }}
         workoutId={todayWorkout?.id ?? null}
+        muscle={todayWorkout?.targetMuscle ?? null}
         sectionKey={addingTo}
         sectionTitle={sections.find((s) => s.key === addingTo)?.title ?? ""}
         onAdd={handleAddFromLibrary}
@@ -292,6 +293,7 @@ export default function WorkoutPage() {
           if (!o) setReplacing(null);
         }}
         workoutId={todayWorkout?.id ?? null}
+        muscle={todayWorkout?.targetMuscle ?? null}
         replacing={replacing}
         onSelect={handleReplaceSelect}
       />

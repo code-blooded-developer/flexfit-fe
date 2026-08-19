@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workoutService } from "@/services/workoutService";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { normalizeError } from "@/lib/errorUtils";
-import type { Workout, WorkoutExercise, ExerciseCategory } from "@/types/workout";
+import type { Workout, WorkoutExercise, ExerciseCategory, MuscleGroup } from "@/types/workout";
 
 /* ── Query: today's workout ── */
 
@@ -43,12 +43,14 @@ export function useWorkout() {
 export function useAlternatives(
   workoutId: string | null,
   category?: ExerciseCategory | null,
+  muscle?: MuscleGroup | null,
 ) {
   const query = useQuery<WorkoutExercise[]>({
-    queryKey: ["alternatives", workoutId, category],
+    queryKey: ["alternatives", workoutId, category, muscle],
     queryFn: () => {
-      const params: { category?: ExerciseCategory } = {};
+      const params: { category?: ExerciseCategory; muscle?: MuscleGroup } = {};
       if (category) params.category = category;
+      if (muscle) params.muscle = muscle;
       return workoutService.getAlternatives(workoutId!, params);
     },
     enabled: !!workoutId && !!category,
