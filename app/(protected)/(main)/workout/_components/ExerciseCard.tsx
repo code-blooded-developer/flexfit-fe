@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { MoreVertical, ClipboardList, RefreshCw, Trash2 } from "lucide-react";
 import {
@@ -26,6 +27,8 @@ export default function ExerciseCard({
   onReplace,
   onDelete,
 }: Props) {
+  const router = useRouter();
+
   const meta: { label: string; value: string }[] = [];
   if (ex.time) {
     meta.push({ label: "", value: ex.time });
@@ -35,6 +38,8 @@ export default function ExerciseCard({
   }
   if (ex.weight) meta.push({ label: "", value: ex.weight });
 
+  const openFocus = () => router.push(`/exercise?exerciseId=${encodeURIComponent(ex.id)}`);
+
   return (
     <motion.div
       layout
@@ -42,7 +47,16 @@ export default function ExerciseCard({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 30, transition: { duration: 0.2 } }}
       transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="rounded-2xl bg-card p-3 border border-border flex items-center gap-3"
+      role="button"
+      tabIndex={0}
+      onClick={openFocus}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openFocus();
+        }
+      }}
+      className="rounded-2xl bg-card p-3 border border-border flex items-center gap-3 cursor-pointer active:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div
         className={`w-14 h-14 rounded-xl bg-gradient-to-br ${ex.gradient} flex items-center justify-center text-2xl shrink-0`}
@@ -70,7 +84,12 @@ export default function ExerciseCard({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="p-2 -mr-1 rounded-lg active:bg-secondary text-muted-foreground">
+          <button
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            aria-label={`Options for ${ex.name}`}
+            className="p-2 -mr-1 rounded-lg active:bg-secondary text-muted-foreground cursor-pointer"
+          >
             <MoreVertical size={18} />
           </button>
         </DropdownMenuTrigger>

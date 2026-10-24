@@ -55,7 +55,9 @@ export type WorkoutExercise = {
   targetDurationSeconds: number | null;
   restSeconds: number | null;
   notes: string | null;
-  mediaUrl: string | null;
+  instructions: string | null;
+  thumbnailKey: string | null;
+  videoKey: string | null;
   sets: WorkoutSet[];
 };
 
@@ -74,4 +76,3 @@ export type AlternateMuscle = {
   muscle: MuscleGroup;
   targetMuscles: MuscleGroup[];
 };
-

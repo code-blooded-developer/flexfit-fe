@@ -6,6 +6,7 @@ const protectedRoutes = [
   "/dashboard",
   "/equipment-selection",
   "/workout",
+  "/exercise",
 ];
 const authRoutes = ["/auth", "/login", "/signup", "/forgot-password"];
 
@@ -93,5 +94,6 @@ export const config = {
     "/dashboard/:path*",
     "/equipment-selection/:path*",
     "/workout/:path*",
+    "/exercise/:path*",
   ],
 };
