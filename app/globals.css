@@ -116,6 +116,12 @@
 }
 
 @layer utilities {
+  /* react-body-highlighter marks every muscle polygon with an inline
+     pointer cursor; the figure is decorative, so opt out. */
+  .anatomy-figure .rbh polygon {
+    cursor: inherit !important;
+  }
+
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(

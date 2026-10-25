@@ -24,112 +24,13 @@ import {
   pickGradient,
 } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
 import type { WorkoutExercise } from "@/types/workout";
-
-/** Which body parts on the skeleton to highlight for a given muscle name. */
-const muscleMap: Record<string, string[]> = {
-  chest: ["chest"],
-  "upper chest": ["chest"],
-  back: ["back"],
-  shoulders: ["shoulders"],
-  delts: ["shoulders"],
-  triceps: ["triceps"],
-  biceps: ["biceps"],
-  arms: ["biceps", "triceps"],
-  legs: ["quads", "hamstrings"],
-  quads: ["quads"],
-  hamstrings: ["hamstrings"],
-  glutes: ["glutes"],
-  calves: ["calves"],
-  core: ["core"],
-  abs: ["core"],
-  cardio: ["core", "quads"],
-  "full body": ["chest", "core", "quads", "shoulders"],
-  spine: ["back"],
-};
-
-const getHighlights = (muscle?: string) => {
-  if (!muscle) return [];
-  return muscleMap[muscle.toLowerCase()] ?? [];
-};
+import AnatomyFigure from "./AnatomyFigure";
 
 const OVERLAY_VISIBLE_MS = 4500;
 const REST_SECONDS = 60;
 
 const formatClock = (totalSeconds: number) =>
   `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, "0")}`;
-
-/* ── Body skeleton ── */
-
-const BodySkeleton = ({ highlighted }: { highlighted: string[] }) => {
-  const isOn = (k: string) => highlighted.includes(k);
-  const active = "hsl(var(--primary))";
-  const idle = "hsl(var(--muted))";
-  const stroke = "hsl(var(--border))";
-
-  return (
-    <svg viewBox="0 0 120 200" className="w-full h-full" aria-hidden="true">
-      {/* head */}
-      <circle cx="60" cy="18" r="11" fill={idle} stroke={stroke} strokeWidth="1" />
-      {/* neck */}
-      <rect x="56" y="28" width="8" height="6" fill={idle} />
-      {/* shoulders */}
-      <path
-        d="M30 40 Q60 30 90 40 L88 52 Q60 44 32 52 Z"
-        fill={isOn("shoulders") ? active : idle}
-        stroke={stroke}
-      />
-      {/* chest */}
-      <path
-        d="M36 50 Q60 56 84 50 L82 76 Q60 82 38 76 Z"
-        fill={isOn("chest") ? active : idle}
-        stroke={stroke}
-      />
-      {/* core */}
-      <path
-        d="M40 76 L80 76 L76 104 L44 104 Z"
-        fill={isOn("core") ? active : idle}
-        stroke={stroke}
-      />
-      {/* back (shown subtly behind via dashed outline) */}
-      {isOn("back") && (
-        <path
-          d="M38 52 L82 52 L80 100 L40 100 Z"
-          fill="none"
-          stroke={active}
-          strokeWidth="2"
-          strokeDasharray="3 3"
-        />
-      )}
-      {/* biceps (upper arms) */}
-      <rect x="20" y="50" width="10" height="28" rx="5" fill={isOn("biceps") ? active : idle} stroke={stroke} />
-      <rect x="90" y="50" width="10" height="28" rx="5" fill={isOn("biceps") ? active : idle} stroke={stroke} />
-      {/* triceps (lower arms) */}
-      <rect x="20" y="80" width="10" height="26" rx="5" fill={isOn("triceps") ? active : idle} stroke={stroke} />
-      <rect x="90" y="80" width="10" height="26" rx="5" fill={isOn("triceps") ? active : idle} stroke={stroke} />
-      {/* hands */}
-      <circle cx="25" cy="112" r="5" fill={idle} stroke={stroke} />
-      <circle cx="95" cy="112" r="5" fill={idle} stroke={stroke} />
-      {/* quads */}
-      <rect x="42" y="106" width="14" height="42" rx="6" fill={isOn("quads") ? active : idle} stroke={stroke} />
-      <rect x="64" y="106" width="14" height="42" rx="6" fill={isOn("quads") ? active : idle} stroke={stroke} />
-      {/* hamstrings overlay */}
-      {isOn("hamstrings") && (
-        <>
-          <rect x="42" y="106" width="14" height="42" rx="6" fill="none" stroke={active} strokeWidth="2" strokeDasharray="3 3" />
-          <rect x="64" y="106" width="14" height="42" rx="6" fill="none" stroke={active} strokeWidth="2" strokeDasharray="3 3" />
-        </>
-      )}
-      {/* glutes */}
-      {isOn("glutes") && <ellipse cx="60" cy="108" rx="22" ry="6" fill={active} opacity="0.7" />}
-      {/* calves */}
-      <rect x="44" y="150" width="11" height="32" rx="5" fill={isOn("calves") ? active : idle} stroke={stroke} />
-      <rect x="65" y="150" width="11" height="32" rx="5" fill={isOn("calves") ? active : idle} stroke={stroke} />
-      {/* feet */}
-      <ellipse cx="49" cy="186" rx="7" ry="4" fill={idle} stroke={stroke} />
-      <ellipse cx="70" cy="186" rx="7" ry="4" fill={idle} stroke={stroke} />
-    </svg>
-  );
-};
 
 /* ── Page ── */
 
@@ -248,7 +149,6 @@ function ExerciseFocusView({
   onExit: () => void;
 }) {
   const name = exercise.exerciseName;
-  const muscle = MUSCLE_GROUP_NAMES[exercise.primaryMuscle] ?? exercise.primaryMuscle;
   const image = MUSCLE_GROUP_EMOJI[exercise.primaryMuscle] ?? "🏋️";
   const gradient = pickGradient(exercise.exerciseName);
   const totalSets = Math.max(exercise.targetSets ?? exercise.sets.length ?? 0, 1);
@@ -280,7 +180,13 @@ function ExerciseFocusView({
     [exercise.exerciseId, exercise.videoKey],
   );
 
-  const highlights = useMemo(() => getHighlights(muscle.toLowerCase()), [muscle]);
+  const targets = useMemo(
+    () =>
+      [exercise.primaryMuscle, ...exercise.secondaryMuscles].map(
+        (m) => MUSCLE_GROUP_NAMES[m] ?? m,
+      ),
+    [exercise.primaryMuscle, exercise.secondaryMuscles],
+  );
 
   // Cues come from the backend, one per line — no client-side guessing.
   const cues = useMemo(
@@ -439,30 +345,19 @@ function ExerciseFocusView({
               >
                 <ArrowLeft size={22} />
               </motion.button>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-[10px] uppercase tracking-widest text-primary font-semibold px-2 py-1 rounded-md bg-primary/15">
-                  Set {currentSet} of {totalSets}
-                </span>
-                <span className="text-[11px] text-muted-foreground">{muscle}</span>
-              </div>
+              <span className="text-[10px] uppercase tracking-widest text-primary font-semibold px-2 py-1 rounded-md bg-primary/15">
+                Set {currentSet} of {totalSets}
+              </span>
             </div>
 
-            {/* Muscle skeleton card */}
-            <div className="px-6">
-              <div className="rounded-2xl bg-background/60 backdrop-blur-md border border-border p-3 flex items-center gap-3 max-w-xs">
-                <div className="w-16 h-20 shrink-0">
-                  <BodySkeleton highlighted={highlights} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Targets</p>
-                  <p className="text-sm font-semibold capitalize">
-                    {highlights.length ? highlights.join(" · ") : muscle}
-                  </p>
-                </div>
-              </div>
+            {/* Target muscles */}
+            <p className="sr-only">Targets: {targets.join(", ")}</p>
+            <div className="flex-1 flex items-center justify-center px-6">
+              <AnatomyFigure
+                primary={exercise.primaryMuscle}
+                secondary={exercise.secondaryMuscles}
+              />
             </div>
-
-            <div className="flex-1" />
 
             {/* Bottom block: name, reps, actions, rest */}
             <div className="px-6 pb-8 flex flex-col gap-5">
