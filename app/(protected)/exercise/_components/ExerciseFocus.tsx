@@ -275,7 +275,10 @@ function ExerciseFocusView({
 
   const resting = restActive && restTime > 0;
 
-  const videoUrl = useMemo(() => exerciseVideoUrl(exercise.exerciseId), [exercise.exerciseId]);
+  const videoUrl = useMemo(
+    () => exerciseVideoUrl(exercise.exerciseId, exercise.videoKey),
+    [exercise.exerciseId, exercise.videoKey],
+  );
 
   const highlights = useMemo(() => getHighlights(muscle.toLowerCase()), [muscle]);
 
