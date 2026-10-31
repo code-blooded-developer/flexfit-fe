@@ -137,7 +137,7 @@ export function workoutExerciseToLibraryItem(ex: WorkoutExercise): LibraryItem {
     gradient: pickGradient(ex.exerciseName),
     type: PHASE_TO_TYPE[ex.phase] ?? "strength",
     sets: ex.targetSets,
-    reps: ex.targetReps,
+    reps: ex.targetReps ?? undefined,
     time: ex.targetDurationSeconds != null ? formatSetTime(ex.targetDurationSeconds) : undefined,
   };
 }
@@ -203,7 +203,7 @@ export function mapWorkoutToSections(workout: Workout): Section[] {
       image: MUSCLE_GROUP_EMOJI[ex.primaryMuscle] ?? "🏋️",
       gradient: pickGradient(ex.exerciseName),
       sets: ex.targetSets,
-      reps: ex.targetReps,
+      reps: ex.targetReps ?? undefined,
       weight: firstSet?.weight != null ? `${firstSet.weight} kg` : undefined,
       time: ex.targetDurationSeconds != null ? formatSetTime(ex.targetDurationSeconds) : undefined,
       type: PHASE_TO_TYPE[ex.phase] ?? "strength",

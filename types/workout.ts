@@ -51,7 +51,7 @@ export type WorkoutExercise = {
   phase: ExerciseCategory;
   sortOrder: number;
   targetSets: number;
-  targetReps: string;
+  targetReps: string | null;
   targetDurationSeconds: number | null;
   restSeconds: number | null;
   notes: string | null;

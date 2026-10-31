@@ -154,7 +154,8 @@ function ExerciseFocusView({
   const totalSets = Math.max(exercise.targetSets ?? exercise.sets.length ?? 0, 1);
 
   const lastSet = exercise.sets[exercise.sets.length - 1];
-  const weightLabel = lastSet?.weight != null ? `${lastSet.weight} kg` : "—";
+  // No weight until a set is logged — hide the slot rather than print a dash.
+  const weightLabel = lastSet?.weight != null ? `${lastSet.weight} kg` : null;
   const targetLabel = exercise.targetReps
     ? `${exercise.targetReps} reps`
     : exercise.targetDurationSeconds != null
@@ -367,10 +368,14 @@ function ExerciseFocusView({
                   <span>
                     <strong className="text-foreground">{targetLabel}</strong>
                   </span>
-                  <span className="w-1 h-1 rounded-full bg-border" />
-                  <span>
-                    <strong className="text-foreground">{weightLabel}</strong>
-                  </span>
+                  {weightLabel && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-border" />
+                      <span>
+                        <strong className="text-foreground">{weightLabel}</strong>
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
