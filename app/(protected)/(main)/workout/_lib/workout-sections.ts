@@ -6,6 +6,12 @@ import type {
   WorkoutExercise,
   WorkoutSet as ApiWorkoutSet,
 } from "@/types/workout";
+import {
+  formatSetDistance,
+  formatSetReps,
+  formatSetTime,
+  formatSetWeight,
+} from "@/lib/workoutFormat";
 
 /* ── Display types ── */
 
@@ -143,29 +149,6 @@ export function workoutExerciseToLibraryItem(ex: WorkoutExercise): LibraryItem {
 }
 
 /* ── Helpers ── */
-
-function formatSetWeight(weight: number | null): string | undefined {
-  if (weight === null) return undefined;
-  return `${weight} kg`;
-}
-
-function formatSetReps(reps: number | null): string | undefined {
-  if (reps === null) return undefined;
-  return String(reps);
-}
-
-function formatSetTime(durationSeconds: number | null): string | undefined {
-  if (durationSeconds === null) return undefined;
-  if (durationSeconds >= 60) {
-    return `${Math.round(durationSeconds / 60)} min`;
-  }
-  return `${durationSeconds} s`;
-}
-
-function formatSetDistance(distance: number | null): string | undefined {
-  if (distance === null) return undefined;
-  return `${distance} km`;
-}
 
 function mapSetToLogEntry(set: ApiWorkoutSet): LogEntry {
   return {

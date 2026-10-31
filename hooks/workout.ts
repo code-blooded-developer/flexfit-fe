@@ -9,6 +9,7 @@ import { normalizeError } from "@/lib/errorUtils";
 import type {
   Workout,
   WorkoutExercise,
+  WorkoutSetInput,
   ExerciseCategory,
   MuscleGroup,
   AlternateMuscle,
@@ -199,6 +200,64 @@ export function useSwapWorkout() {
     isLoading: mutation.isPending,
     error: mutation.error
       ? normalizeError(mutation.error, "Failed to swap workout")
+      : null,
+    reset: mutation.reset,
+  };
+}
+
+/* ── Mutation: log a set ── */
+
+type LogSetVars = {
+  workoutId: string;
+  exerciseId: string;
+  data: WorkoutSetInput;
+};
+
+export function useLogSet() {
+  const qc = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: ({ workoutId, exerciseId, data }: LogSetVars) =>
+      workoutService.logSet(workoutId, exerciseId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["todayWorkout"] });
+    },
+  });
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error
+      ? normalizeError(mutation.error, "Failed to save set")
+      : null,
+    reset: mutation.reset,
+  };
+}
+
+/* ── Mutation: delete a logged set ── */
+
+type DeleteSetVars = {
+  workoutId: string;
+  exerciseId: string;
+  setId: string;
+};
+
+export function useDeleteSet() {
+  const qc = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: ({ workoutId, exerciseId, setId }: DeleteSetVars) =>
+      workoutService.deleteSet(workoutId, exerciseId, setId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["todayWorkout"] });
+    },
+  });
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error
+      ? normalizeError(mutation.error, "Failed to delete set")
       : null,
     reset: mutation.reset,
   };

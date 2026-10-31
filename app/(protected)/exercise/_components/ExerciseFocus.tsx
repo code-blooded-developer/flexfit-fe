@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkout } from "@/hooks/workout";
+import LogSetSheet from "@/components/LogSetSheet";
+import { useWorkout, useLogSet, useDeleteSet } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { exerciseVideoUrl } from "@/lib/exerciseMedia";
 import { resolveCues, shouldRotate } from "@/lib/instructions";
@@ -23,7 +24,7 @@ import {
   MUSCLE_GROUP_NAMES,
   pickGradient,
 } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
-import type { WorkoutExercise } from "@/types/workout";
+import type { WorkoutExercise, WorkoutSetInput } from "@/types/workout";
 import AnatomyFigure from "./AnatomyFigure";
 
 const OVERLAY_VISIBLE_MS = 4500;
@@ -134,6 +135,7 @@ export default function ExerciseFocus({ exerciseId }: Props) {
     <ExerciseFocusView
       key={workoutExercise.id}
       exercise={workoutExercise}
+      workoutId={todayWorkout!.id}
       onExit={handleBack}
     />
   );
@@ -143,9 +145,11 @@ export default function ExerciseFocus({ exerciseId }: Props) {
 
 function ExerciseFocusView({
   exercise,
+  workoutId,
   onExit,
 }: {
   exercise: WorkoutExercise;
+  workoutId: string;
   onExit: () => void;
 }) {
   const name = exercise.exerciseName;
@@ -162,11 +166,13 @@ function ExerciseFocusView({
       ? formatClock(exercise.targetDurationSeconds)
       : "—";
 
-  // Local only: sets are not persisted yet.
-  const [localSets, setLocalSets] = useState(0);
-  const loggedSets = exercise.sets.length + localSets;
+  const loggedSets = exercise.sets.length;
   const currentSet = Math.min(loggedSets + 1, totalSets);
   const allSetsDone = loggedSets >= totalSets;
+
+  const [logSheetOpen, setLogSheetOpen] = useState(false);
+  const logSet = useLogSet();
+  const deleteSet = useDeleteSet();
 
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [restTime, setRestTime] = useState(REST_SECONDS);
@@ -239,12 +245,33 @@ function ExerciseFocusView({
       onExit();
       return;
     }
-    // TODO: persist with POST /workouts/{workoutId}/exercises/{id}/sets once set logging lands.
-    setLocalSets((n) => n + 1);
-    setRestActive(true);
-    setRestTime(REST_SECONDS);
-    setOverlayVisible(true);
-    scheduleHide();
+    setLogSheetOpen(true);
+  };
+
+  const handleSubmitSet = (data: WorkoutSetInput) => {
+    logSet.mutate(
+      { workoutId, exerciseId: exercise.id, data },
+      {
+        onSuccess: () => {
+          setLogSheetOpen(false);
+          logSet.reset();
+          setRestActive(true);
+          setRestTime(REST_SECONDS);
+          setOverlayVisible(true);
+          scheduleHide();
+        },
+      },
+    );
+  };
+
+  const handleDeleteSet = (setId: string) => {
+    deleteSet.mutate({ workoutId, exerciseId: exercise.id, setId });
+  };
+
+  const closeLogSheet = (open: boolean) => {
+    if (open) return;
+    setLogSheetOpen(false);
+    logSet.reset();
   };
 
   const skipRest = () => {
@@ -431,6 +458,16 @@ function ExerciseFocusView({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <LogSetSheet
+        open={logSheetOpen}
+        onOpenChange={closeLogSheet}
+        exercise={exercise}
+        onSubmit={handleSubmitSet}
+        onDeleteSet={handleDeleteSet}
+        saving={logSet.isLoading}
+        error={logSet.error}
+      />
     </div>
   );
 }

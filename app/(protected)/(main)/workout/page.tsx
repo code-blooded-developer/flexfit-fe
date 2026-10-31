@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,8 +9,11 @@ import {
   useReplaceExercise,
   useDeleteExercise,
   useAddExercises,
+  useLogSet,
+  useDeleteSet,
 } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
+import type { WorkoutSetInput } from "@/types/workout";
 import {
   mapWorkoutToSections,
   type Exercise,
@@ -23,13 +26,11 @@ import WorkoutHeader from "./_components/WorkoutHeader";
 import ExerciseSection from "./_components/ExerciseSection";
 import AddExerciseSheet from "./_components/AddExerciseSheet";
 import ReplaceExerciseSheet from "./_components/ReplaceExerciseSheet";
-import LogSetSheet from "./_components/LogSetSheet";
+import LogSetSheet from "@/components/LogSetSheet";
 import SwapMuscleSheet from "./_components/SwapMuscleSheet";
 import StartWorkoutButton from "./_components/StartWorkoutButton";
 import { Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const uid = () => Math.random().toString(36).slice(2, 10);
 
 export default function WorkoutPage() {
   const queryClient = useQueryClient();
@@ -40,20 +41,31 @@ export default function WorkoutPage() {
     section: SectionKey;
     id: string;
   } | null>(null);
-  const [logging, setLogging] = useState<{
-    section: SectionKey;
-    exercise: Exercise;
-  } | null>(null);
+  const [loggingId, setLoggingId] = useState<string | null>(null);
 
   useWorkout();
   const { todayWorkout, isLoading, error } = useWorkoutStore();
   const replaceMutation = useReplaceExercise();
   const deleteMutation = useDeleteExercise();
   const addExercisesMutation = useAddExercises();
+  const logSetMutation = useLogSet();
+  const deleteSetMutation = useDeleteSet();
+
+  const loggingExercise = useMemo(
+    () =>
+      loggingId
+        ? (todayWorkout?.exercises.find((e) => e.id === loggingId) ?? null)
+        : null,
+    [loggingId, todayWorkout],
+  );
 
   const [workoutKey, setWorkoutKey] = useState<string | null>(null);
+  // Set counts belong in the key: logging a set changes no exercise ids, so
+  // without them the refetched workout would never rebuild the sections.
   const nextKey = todayWorkout
-    ? `${todayWorkout.id}-${todayWorkout.exercises.map((e) => e.id).join(",")}`
+    ? `${todayWorkout.id}-${todayWorkout.exercises
+        .map((e) => `${e.id}:${e.sets.length}`)
+        .join(",")}`
     : null;
   if (nextKey && nextKey !== workoutKey) {
     setWorkoutKey(nextKey);
@@ -120,62 +132,24 @@ export default function WorkoutPage() {
     );
   };
 
-  const handleLog = (sk: SectionKey, exercise: Exercise) =>
-    setLogging({ section: sk, exercise });
+  const handleLog = (_sk: SectionKey, exercise: Exercise) =>
+    setLoggingId(exercise.id);
 
-  const handleLogSubmit = (
-    sk: SectionKey,
-    exerciseId: string,
-    data: {
-      weight?: string;
-      reps?: string;
-      time?: string;
-      distance?: string;
-      notes?: string;
-    },
-  ) => {
-    updateSection(sk, (exs) =>
-      exs.map((e) =>
-        e.id === exerciseId
-          ? {
-              ...e,
-              logs: [{ id: uid(), ...data, createdAt: Date.now() }, ...e.logs],
-            }
-          : e,
-      ),
+  const handleLogSubmit = (data: WorkoutSetInput) => {
+    if (!loggingId || !todayWorkout) return;
+    logSetMutation.mutate(
+      { workoutId: todayWorkout.id, exerciseId: loggingId, data },
+      { onSuccess: () => setLoggingId(null) },
     );
   };
 
-  const handleDeleteLog = (
-    sk: SectionKey,
-    exerciseId: string,
-    logId: string,
-  ) => {
-    setSections((prev) =>
-      prev.map((s) =>
-        s.key === sk
-          ? {
-              ...s,
-              exercises: s.exercises.map((e) =>
-                e.id === exerciseId
-                  ? { ...e, logs: e.logs.filter((l) => l.id !== logId) }
-                  : e,
-              ),
-            }
-          : s,
-      ),
-    );
-    setLogging((cur) =>
-      cur
-        ? {
-            ...cur,
-            exercise: {
-              ...cur.exercise,
-              logs: cur.exercise.logs.filter((l) => l.id !== logId),
-            },
-          }
-        : cur,
-    );
+  const handleDeleteLog = (setId: string) => {
+    if (!loggingId || !todayWorkout) return;
+    deleteSetMutation.mutate({
+      workoutId: todayWorkout.id,
+      exerciseId: loggingId,
+      setId,
+    });
   };
 
   if (isLoading) {
@@ -306,13 +280,19 @@ export default function WorkoutPage() {
       />
 
       <LogSetSheet
-        open={!!logging}
-        onOpenChange={(o) => {
-          if (!o) setLogging(null);
+        open={!!loggingId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setLoggingId(null);
+            logSetMutation.reset();
+            deleteSetMutation.reset();
+          }
         }}
-        logging={logging}
+        exercise={loggingExercise}
         onSubmit={handleLogSubmit}
-        onDeleteLog={handleDeleteLog}
+        onDeleteSet={handleDeleteLog}
+        saving={logSetMutation.isLoading}
+        error={logSetMutation.error ?? deleteSetMutation.error}
       />
     </div>
   );

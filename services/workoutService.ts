@@ -2,6 +2,8 @@ import api from "@/lib/api";
 import type {
   Workout,
   WorkoutExercise,
+  WorkoutSet,
+  WorkoutSetInput,
   ExerciseCategory,
   MuscleGroup,
   AlternateMuscle,
@@ -29,4 +31,14 @@ export const workoutService = {
     api.delete(`/workouts/${workoutId}/exercises/${exerciseId}`),
   addExercises: (workoutId: string, exerciseIds: string[]) =>
     api.post(`/workouts/${workoutId}/exercises`, { exerciseIds }),
+  // `exerciseId` here is the WorkoutExercise id, not the library Exercise id.
+  logSet: (workoutId: string, exerciseId: string, data: WorkoutSetInput) =>
+    api.post<WorkoutSet>(
+      `/workouts/${workoutId}/exercises/${exerciseId}/sets`,
+      data,
+    ),
+  deleteSet: (workoutId: string, exerciseId: string, setId: string) =>
+    api.delete<void>(
+      `/workouts/${workoutId}/exercises/${exerciseId}/sets/${setId}`,
+    ),
 };

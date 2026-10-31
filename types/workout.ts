@@ -27,9 +27,12 @@ export const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {
   FULL_BODY: "Full Body Day",
 };
 
-export type ExerciseType = "COMPOUND" | "ISOLATION";
+export type ExerciseType = "COMPOUND" | "ISOLATION" | "CARDIO";
 
 export type ExerciseCategory = "WARMUP" | "MAIN" | "STRETCHING";
+
+/** How an exercise is measured — decides which fields a logged set carries. */
+export type MeasurementType = "REPS" | "DURATION";
 
 export type WorkoutSet = {
   id: string;
@@ -41,6 +44,16 @@ export type WorkoutSet = {
   notes: string | null;
 };
 
+/** Payload for POST/PUT /workouts/{workoutId}/exercises/{exerciseId}/sets. */
+export type WorkoutSetInput = {
+  setNumber: number;
+  weight?: number | null;
+  reps?: number | null;
+  distance?: number | null;
+  durationSeconds?: number | null;
+  notes?: string | null;
+};
+
 export type WorkoutExercise = {
   id: string;
   exerciseId: string;
@@ -48,6 +61,7 @@ export type WorkoutExercise = {
   primaryMuscle: MuscleGroup;
   secondaryMuscles: MuscleGroup[];
   exerciseType: ExerciseType;
+  measurementType: MeasurementType;
   phase: ExerciseCategory;
   sortOrder: number;
   targetSets: number;
