@@ -162,8 +162,9 @@ function LogSetForm({
     const errors: Record<string, string> = {};
 
     if (isReps) {
+      // Every field on the form is required; weight 0 covers bodyweight work.
       const weightError = validateField(parsedWeight, LIMITS.weight, {
-        required: false,
+        required: true,
         label: "Weight",
       });
       if (weightError) errors.weight = weightError;
@@ -182,8 +183,9 @@ function LogSetForm({
     }
 
     if (showDistance) {
+      // Distance 0 covers cardio that tracks time only.
       const distanceError = validateField(parsedDistance, LIMITS.distance, {
-        required: false,
+        required: true,
         label: "Distance",
       });
       if (distanceError) errors.distance = distanceError;
@@ -261,6 +263,7 @@ function LogSetForm({
                   clearFieldError("weight");
                 }}
                 placeholder="e.g. 60"
+                required
                 aria-invalid={!!fieldErrors.weight}
                 className={inputClass(!!fieldErrors.weight)}
               />
@@ -278,6 +281,7 @@ function LogSetForm({
                   clearFieldError("reps");
                 }}
                 placeholder="e.g. 10"
+                required
                 aria-invalid={!!fieldErrors.reps}
                 className={inputClass(!!fieldErrors.reps)}
               />
@@ -298,6 +302,7 @@ function LogSetForm({
                   clearFieldError("duration");
                 }}
                 placeholder="e.g. 30"
+                required
                 aria-invalid={!!fieldErrors.duration}
                 className={inputClass(!!fieldErrors.duration)}
               />
@@ -321,6 +326,7 @@ function LogSetForm({
                     clearFieldError("distance");
                   }}
                   placeholder="e.g. 3"
+                  required
                   aria-invalid={!!fieldErrors.distance}
                   className={inputClass(!!fieldErrors.distance)}
                 />
