@@ -44,21 +44,67 @@ function lowBound(targetReps: string | null): number | null {
   return match ? Number(match[0]) : null;
 }
 
+/* ── Validation ── */
+
+const LIMITS = {
+  weight: { min: 0, max: 999, unit: "kg", integer: false },
+  reps: { min: 1, max: 999, unit: "reps", integer: true },
+  duration: { min: 1, max: 7200, unit: "seconds", integer: true },
+  distance: { min: 0, max: 100, unit: "km", integer: false },
+} as const;
+
+/** Backend stores notes in a varchar(255). */
+const NOTES_MAX = 255;
+
+// Rejects "-5", "1e3", "0x10" and "1.2.3"; accepts "60", "60.5", "60,5".
+const DECIMAL_RE = /^\d+(?:[.,]\d+)?$/;
+const INTEGER_RE = /^\d+$/;
+
 /** `null` = empty field, `"invalid"` = unparseable. */
 type Parsed = number | null | "invalid";
 
-function parseNumber(raw: string): Parsed {
-  const trimmed = raw.trim().replace(",", ".");
+function parseDecimal(raw: string): Parsed {
+  const trimmed = raw.trim();
   if (!trimmed) return null;
-  const n = Number(trimmed);
-  return Number.isFinite(n) ? n : "invalid";
+  if (!DECIMAL_RE.test(trimmed)) return "invalid";
+  return Number(trimmed.replace(",", "."));
 }
 
 function parseInteger(raw: string): Parsed {
-  const n = parseNumber(raw);
-  if (n === null || n === "invalid") return n;
-  return Number.isInteger(n) ? n : "invalid";
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (!INTEGER_RE.test(trimmed)) return "invalid";
+  return Number(trimmed);
 }
+
+type Limit = (typeof LIMITS)[keyof typeof LIMITS];
+
+/** Error message for a parsed value, or null when it is acceptable. */
+function validateField(
+  value: Parsed,
+  limit: Limit,
+  opts: { required: boolean; label: string },
+): string | null {
+  if (value === "invalid") {
+    return limit.integer ? "Enter a whole number" : "Enter a number";
+  }
+  if (value === null) {
+    return opts.required ? `${opts.label} is required` : null;
+  }
+  if (value < limit.min || value > limit.max) {
+    return `Enter ${limit.min}–${limit.max} ${limit.unit}`;
+  }
+  return null;
+}
+
+const asNumber = (value: Parsed): number | null =>
+  typeof value === "number" ? value : null;
+
+/** Red border on invalid fields, matching lib/fieldClass.ts. */
+const inputClass = (hasError: boolean) =>
+  hasError ? "border-destructive focus-visible:ring-destructive" : undefined;
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
 
 const initialValue = (value: number | null | undefined) =>
   value != null ? String(value) : "";
@@ -107,19 +153,44 @@ function LogSetForm({
     });
 
   const handleSave = () => {
-    const parsedWeight = parseNumber(weight);
-    const parsedReps = parseInteger(reps);
-    const parsedDuration = parseInteger(duration);
-    const parsedDistance = parseNumber(distance);
+    const parsedWeight = isReps ? parseDecimal(weight) : null;
+    const parsedReps = isReps ? parseInteger(reps) : null;
+    const parsedDuration = isReps ? null : parseInteger(duration);
+    const parsedDistance = showDistance ? parseDecimal(distance) : null;
+    const trimmedNotes = notes.trim();
 
     const errors: Record<string, string> = {};
-    if (isReps && parsedWeight === "invalid") errors.weight = "Enter a number";
-    if (isReps && parsedReps === "invalid") errors.reps = "Enter a whole number";
-    if (!isReps && parsedDuration === "invalid") {
-      errors.duration = "Enter seconds as a whole number";
+
+    if (isReps) {
+      const weightError = validateField(parsedWeight, LIMITS.weight, {
+        required: false,
+        label: "Weight",
+      });
+      if (weightError) errors.weight = weightError;
+
+      const repsError = validateField(parsedReps, LIMITS.reps, {
+        required: true,
+        label: "Reps",
+      });
+      if (repsError) errors.reps = repsError;
+    } else {
+      const durationError = validateField(parsedDuration, LIMITS.duration, {
+        required: true,
+        label: "Duration",
+      });
+      if (durationError) errors.duration = durationError;
     }
-    if (showDistance && parsedDistance === "invalid") {
-      errors.distance = "Enter a number";
+
+    if (showDistance) {
+      const distanceError = validateField(parsedDistance, LIMITS.distance, {
+        required: false,
+        label: "Distance",
+      });
+      if (distanceError) errors.distance = distanceError;
+    }
+
+    if (trimmedNotes.length > NOTES_MAX) {
+      errors.notes = `Keep notes under ${NOTES_MAX} characters`;
     }
 
     if (Object.keys(errors).length > 0) {
@@ -127,15 +198,16 @@ function LogSetForm({
       return;
     }
 
+    const submittedWeight = asNumber(parsedWeight);
+    const submittedDistance = asNumber(parsedDistance);
+
     onSubmit({
       setNumber,
-      weight: isReps && typeof parsedWeight === "number" ? parsedWeight : null,
-      reps: isReps && typeof parsedReps === "number" ? parsedReps : null,
-      durationSeconds:
-        !isReps && typeof parsedDuration === "number" ? parsedDuration : null,
-      distance:
-        showDistance && typeof parsedDistance === "number" ? parsedDistance : null,
-      notes: notes.trim() || null,
+      weight: submittedWeight === null ? null : round2(submittedWeight),
+      reps: asNumber(parsedReps),
+      durationSeconds: asNumber(parsedDuration),
+      distance: submittedDistance === null ? null : round2(submittedDistance),
+      notes: trimmedNotes || null,
     });
   };
 
@@ -145,6 +217,8 @@ function LogSetForm({
       ? `≈ ${Math.round(n / 60)} min`
       : null;
   })();
+
+  const notesLength = notes.trim().length;
 
   const target = isReps
     ? exercise.targetReps
@@ -187,6 +261,8 @@ function LogSetForm({
                   clearFieldError("weight");
                 }}
                 placeholder="e.g. 60"
+                aria-invalid={!!fieldErrors.weight}
+                className={inputClass(!!fieldErrors.weight)}
               />
               <ErrorMsg msg={fieldErrors.weight} />
             </div>
@@ -202,6 +278,8 @@ function LogSetForm({
                   clearFieldError("reps");
                 }}
                 placeholder="e.g. 10"
+                aria-invalid={!!fieldErrors.reps}
+                className={inputClass(!!fieldErrors.reps)}
               />
               <ErrorMsg msg={fieldErrors.reps} />
             </div>
@@ -220,6 +298,8 @@ function LogSetForm({
                   clearFieldError("duration");
                 }}
                 placeholder="e.g. 30"
+                aria-invalid={!!fieldErrors.duration}
+                className={inputClass(!!fieldErrors.duration)}
               />
               {durationHint && (
                 <p className="text-[11px] text-muted-foreground mt-1 px-1">
@@ -241,6 +321,8 @@ function LogSetForm({
                     clearFieldError("distance");
                   }}
                   placeholder="e.g. 3"
+                  aria-invalid={!!fieldErrors.distance}
+                  className={inputClass(!!fieldErrors.distance)}
                 />
                 <ErrorMsg msg={fieldErrors.distance} />
               </div>
@@ -254,9 +336,26 @@ function LogSetForm({
           </label>
           <Input
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e) => {
+              setNotes(e.target.value);
+              clearFieldError("notes");
+            }}
             placeholder="Optional"
+            aria-invalid={!!fieldErrors.notes}
+            className={inputClass(!!fieldErrors.notes)}
           />
+          {notesLength > 200 && (
+            <p
+              className={`text-[11px] mt-1 px-1 ${
+                notesLength > NOTES_MAX
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {notesLength}/{NOTES_MAX}
+            </p>
+          )}
+          <ErrorMsg msg={fieldErrors.notes} />
         </div>
 
         {exercise.sets.length > 0 && (
