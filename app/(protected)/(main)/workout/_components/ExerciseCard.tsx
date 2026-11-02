@@ -93,7 +93,15 @@ export default function ExerciseCard({
             <MoreVertical size={18} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuContent
+          align="end"
+          className="w-44"
+          // The card underneath is clickable (navigates to the focus page).
+          // Portaled content still bubbles through the React tree, so without
+          // this every menu item also triggered that navigation and the sheet
+          // never opened.
+          onClick={(e) => e.stopPropagation()}
+        >
           <DropdownMenuItem onClick={() => onLog(sectionKey, ex)}>
             <ClipboardList size={14} className="mr-2" /> Add log
           </DropdownMenuItem>
