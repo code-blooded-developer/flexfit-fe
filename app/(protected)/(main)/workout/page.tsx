@@ -25,7 +25,7 @@ import {
 import WorkoutHeader from "./_components/WorkoutHeader";
 import ExerciseSection from "./_components/ExerciseSection";
 import AddExerciseSheet from "./_components/AddExerciseSheet";
-import ReplaceExerciseSheet from "./_components/ReplaceExerciseSheet";
+import ReplaceExerciseSheet from "@/components/ReplaceExerciseSheet";
 import LogSetSheet from "@/components/LogSetSheet";
 import SwapMuscleSheet from "./_components/SwapMuscleSheet";
 import StartWorkoutButton from "./_components/StartWorkoutButton";
@@ -277,6 +277,7 @@ export default function WorkoutPage() {
         muscle={todayWorkout?.targetMuscle ?? null}
         replacing={replacing}
         onSelect={handleReplaceSelect}
+        error={replaceMutation.error}
       />
 
       <LogSetSheet

@@ -11,8 +11,8 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 
-import type { SectionKey, LibraryItem } from "../_lib/workout-sections";
-import { workoutExerciseToLibraryItem, SECTION_TO_PHASE } from "../_lib/workout-sections";
+import type { SectionKey, LibraryItem } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
+import { workoutExerciseToLibraryItem, SECTION_TO_PHASE } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
 import type { ExerciseCategory, MuscleGroup } from "@/types/workout";
 import { useAlternatives } from "@/hooks/workout";
 
@@ -23,11 +23,12 @@ type Props = {
   muscle?: MuscleGroup | null;
   replacing: { section: SectionKey; id: string } | null;
   onSelect: (section: SectionKey, id: string, replacement: LibraryItem) => void;
+  error?: string | null;
 };
 
-export default function ReplaceExerciseSheet({ open, onOpenChange, workoutId, muscle, replacing, onSelect }: Props) {
+export default function ReplaceExerciseSheet({ open, onOpenChange, workoutId, muscle, replacing, onSelect, error }: Props) {
   const phase: ExerciseCategory | null = replacing ? (SECTION_TO_PHASE[replacing.section] as ExerciseCategory) : null;
-  const { data, isLoading, error } = useAlternatives(workoutId, phase, muscle);
+  const { data, isLoading, error: alternativesError } = useAlternatives(workoutId, phase, muscle);
 
   const items = useMemo(
     () => (data ?? []).map(workoutExerciseToLibraryItem),
@@ -42,13 +43,18 @@ export default function ReplaceExerciseSheet({ open, onOpenChange, workoutId, mu
           <SheetDescription>Pick a replacement from the library.</SheetDescription>
         </SheetHeader>
         <div className="mt-4 flex flex-col gap-2 pb-4">
+          {error && (
+            <p className="text-xs text-destructive px-1 pb-1">{error}</p>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground text-sm">
               <Loader2 size={16} className="animate-spin" />
               Loading alternatives...
             </div>
-          ) : error ? (
-            <p className="text-sm text-destructive text-center py-4">{error ?? "Failed to load alternatives"}</p>
+          ) : alternativesError ? (
+            <p className="text-sm text-destructive text-center py-4">
+              {alternativesError ?? "Failed to load alternatives"}
+            </p>
           ) : (
             items.map((lib) => (
               <motion.button

@@ -100,7 +100,7 @@ const SECTION_CONFIG: Record<SectionKey, { title: string; subtitle: string; icon
   stretch: { title: "Stretch", subtitle: "Cool down", icon: Wind },
 };
 
-const PHASE_TO_SECTION: Record<string, SectionKey> = {
+export const PHASE_TO_SECTION: Record<string, SectionKey> = {
   WARMUP: "warmup",
   MAIN: "workout",
   STRETCHING: "stretch",

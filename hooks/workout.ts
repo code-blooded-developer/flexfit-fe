@@ -143,6 +143,7 @@ export function useReplaceExercise() {
     mutateAsync: mutation.mutateAsync,
     isLoading: mutation.isPending,
     error: mutation.error ? normalizeError(mutation.error) : null,
+    reset: mutation.reset,
   };
 }
 

@@ -15,16 +15,24 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import LogSetSheet from "@/components/LogSetSheet";
-import { useWorkout, useLogSet, useDeleteSet } from "@/hooks/workout";
+import ReplaceExerciseSheet from "@/components/ReplaceExerciseSheet";
+import {
+  useWorkout,
+  useLogSet,
+  useDeleteSet,
+  useReplaceExercise,
+} from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { exerciseVideoUrl } from "@/lib/exerciseMedia";
 import { resolveCues, shouldRotate } from "@/lib/instructions";
 import {
   MUSCLE_GROUP_EMOJI,
   MUSCLE_GROUP_NAMES,
+  PHASE_TO_SECTION,
   pickGradient,
 } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
 import type { WorkoutExercise, WorkoutSetInput } from "@/types/workout";
+import type { LibraryItem, SectionKey } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
 import AnatomyFigure from "./AnatomyFigure";
 
 const OVERLAY_VISIBLE_MS = 4500;
@@ -174,6 +182,10 @@ function ExerciseFocusView({
   const logSet = useLogSet();
   const deleteSet = useDeleteSet();
 
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const replaceExercise = useReplaceExercise();
+  const replaceSection = PHASE_TO_SECTION[exercise.phase] ?? "workout";
+
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [restTime, setRestTime] = useState(REST_SECONDS);
   const [restActive, setRestActive] = useState(false);
@@ -266,6 +278,28 @@ function ExerciseFocusView({
 
   const handleDeleteSet = (setId: string) => {
     deleteSet.mutate({ workoutId, exerciseId: exercise.id, setId });
+  };
+
+  const handleReplaceSelect = (
+    _section: SectionKey,
+    exerciseId: string,
+    replacement: LibraryItem,
+  ) => {
+    replaceExercise.mutate(
+      {
+        workoutId,
+        exerciseId,
+        alternativeId: replacement.alternativeId,
+      },
+      {
+        onSuccess: () => {
+          setReplaceOpen(false);
+          // The exercise changed, so any running rest timer is stale.
+          setRestActive(false);
+          setRestTime(REST_SECONDS);
+        },
+      },
+    );
   };
 
   const closeLogSheet = (open: boolean) => {
@@ -418,7 +452,7 @@ function ExerciseFocusView({
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.96 }}
-                  onClick={onExit}
+                  onClick={() => setReplaceOpen(true)}
                   className="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-background/70 backdrop-blur-md border border-border text-foreground font-semibold text-sm cursor-pointer"
                 >
                   <RefreshCw size={16} />
@@ -467,6 +501,23 @@ function ExerciseFocusView({
         onDeleteSet={handleDeleteSet}
         saving={logSet.isLoading}
         error={logSet.error}
+      />
+
+      <ReplaceExerciseSheet
+        open={replaceOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReplaceOpen(false);
+            replaceExercise.reset();
+          }
+        }}
+        workoutId={workoutId}
+        muscle={exercise.primaryMuscle}
+        replacing={
+          replaceOpen ? { section: replaceSection, id: exercise.id } : null
+        }
+        onSelect={handleReplaceSelect}
+        error={replaceExercise.error}
       />
     </div>
   );
