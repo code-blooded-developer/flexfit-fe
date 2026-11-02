@@ -95,7 +95,7 @@ export default function ExerciseSection({
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => onAdd(sectionKey)}
-              className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-muted-foreground text-sm font-medium active:bg-secondary/50"
+              className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-primary/40 text-primary text-sm font-medium transition-colors active:bg-primary/10"
             >
               <Plus size={16} /> Add exercise
             </motion.button>
