@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,9 @@ import {
   useDeleteSet,
 } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
+import { useSessionStore } from "@/store/sessionStore";
+import { useSessionClock } from "@/hooks/useSession";
+import { firstStep, formatSessionTime, orderedExercises } from "@/lib/session";
 import type { WorkoutSetInput } from "@/types/workout";
 import {
   mapWorkoutToSections,
@@ -33,6 +37,7 @@ import { Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WorkoutPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [sections, setSections] = useState<Section[]>([]);
   const [swapOpen, setSwapOpen] = useState(false);
@@ -50,6 +55,62 @@ export default function WorkoutPage() {
   const addExercisesMutation = useAddExercises();
   const logSetMutation = useLogSet();
   const deleteSetMutation = useDeleteSet();
+
+  /* ── Guided session ── */
+
+  const hydrated = useSessionStore((s) => s.hydrated);
+  const sessionStatus = useSessionStore((s) => s.status);
+  const sessionWorkoutId = useSessionStore((s) => s.workoutId);
+  const sessionDate = useSessionStore((s) => s.date);
+  const skippedExerciseIds = useSessionStore((s) => s.skippedExerciseIds);
+  const completedExerciseIds = useSessionStore((s) => s.completedExerciseIds);
+  const startSession = useSessionStore((s) => s.start);
+  const resumeSession = useSessionStore((s) => s.resume);
+  const { elapsedMs } = useSessionClock();
+
+  const matchesSession =
+    !!todayWorkout &&
+    hydrated &&
+    sessionStatus !== "idle" &&
+    sessionWorkoutId === todayWorkout.id &&
+    sessionDate === todayWorkout.date;
+
+  // Standing on the workout list means the session is paused; the clock must
+  // not keep running just because the tab stayed open. Runs on arrival only,
+  // so starting a session from this page isn't immediately undone.
+  useEffect(() => {
+    if (!hydrated) return;
+    const session = useSessionStore.getState();
+    if (session.status === "running") session.pause();
+  }, [hydrated]);
+
+  const handleStartWorkout = () => {
+    if (!todayWorkout) return;
+
+    // A session left over from another day is not resumable.
+    const fresh = !matchesSession || sessionStatus === "completed";
+    const step = firstStep(
+      todayWorkout,
+      fresh ? [] : [...skippedExerciseIds, ...completedExerciseIds],
+    );
+    const exerciseId =
+      step?.exerciseId ?? orderedExercises(todayWorkout)[0]?.id ?? null;
+
+    if (fresh) startSession(todayWorkout.id, todayWorkout.date);
+    else resumeSession();
+
+    if (exerciseId) router.push(`/exercise?exerciseId=${exerciseId}`);
+  };
+
+  const startLabel = matchesSession
+    ? sessionStatus === "completed"
+      ? "Start again"
+      : "Resume workout"
+    : "Start Workout";
+  const startHint =
+    matchesSession && sessionStatus !== "completed"
+      ? formatSessionTime(elapsedMs)
+      : null;
 
   const loggingExercise = useMemo(
     () =>
@@ -254,7 +315,16 @@ export default function WorkoutPage() {
         ))}
       </div>
 
-      <StartWorkoutButton onClick={() => {}} />
+      {hydrated && (
+        <StartWorkoutButton
+          onClick={handleStartWorkout}
+          label={startLabel}
+          hint={startHint}
+          icon={
+            matchesSession && sessionStatus === "completed" ? "restart" : "play"
+          }
+        />
+      )}
 
       <AddExerciseSheet
         open={!!addingTo}

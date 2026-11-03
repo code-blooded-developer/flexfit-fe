@@ -41,4 +41,6 @@ export const workoutService = {
     api.delete<void>(
       `/workouts/${workoutId}/exercises/${exerciseId}/sets/${setId}`,
     ),
+  completeWorkout: (workoutId: string) =>
+    api.post<Workout>(`/workouts/${workoutId}/complete`),
 };

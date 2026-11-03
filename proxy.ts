@@ -7,6 +7,8 @@ const protectedRoutes = [
   "/equipment-selection",
   "/workout",
   "/exercise",
+  "/rest",
+  "/complete",
 ];
 const authRoutes = ["/auth", "/login", "/signup", "/forgot-password"];
 
@@ -95,5 +97,7 @@ export const config = {
     "/equipment-selection/:path*",
     "/workout/:path*",
     "/exercise/:path*",
+    "/rest/:path*",
+    "/complete/:path*",
   ],
 };

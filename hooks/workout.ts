@@ -264,3 +264,25 @@ export function useDeleteSet() {
   };
 }
 
+/* ── Mutation: mark the workout complete ── */
+
+export function useCompleteWorkout() {
+  const qc = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (workoutId: string) =>
+      workoutService.completeWorkout(workoutId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["todayWorkout"] });
+    },
+  });
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error
+      ? normalizeError(mutation.error, "Failed to complete workout")
+      : null,
+    reset: mutation.reset,
+  };
+}

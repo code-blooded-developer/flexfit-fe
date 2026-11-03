@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Check,
   Loader2,
+  Play,
   RefreshCw,
   SkipForward,
   Timer,
@@ -16,22 +17,32 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import LogSetSheet from "@/components/LogSetSheet";
 import ReplaceExerciseSheet from "@/components/ReplaceExerciseSheet";
+import SessionClock from "@/components/SessionClock";
 import {
   useWorkout,
   useLogSet,
   useDeleteSet,
   useReplaceExercise,
+  useCompleteWorkout,
 } from "@/hooks/workout";
 import { useWorkoutStore } from "@/store/workoutStore";
+import { useSessionStore } from "@/store/sessionStore";
 import { exerciseVideoUrl } from "@/lib/exerciseMedia";
 import { resolveCues, shouldRotate } from "@/lib/instructions";
+import {
+  firstStep,
+  restSecondsFor,
+  stepAfterExercise,
+  stepAfterSet,
+  type SessionStep,
+} from "@/lib/session";
 import {
   MUSCLE_GROUP_EMOJI,
   MUSCLE_GROUP_NAMES,
   PHASE_TO_SECTION,
   pickGradient,
 } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
-import type { WorkoutExercise, WorkoutSetInput } from "@/types/workout";
+import type { Workout, WorkoutExercise, WorkoutSetInput } from "@/types/workout";
 import type { LibraryItem, SectionKey } from "@/app/(protected)/(main)/workout/_lib/workout-sections";
 import AnatomyFigure from "./AnatomyFigure";
 
@@ -62,12 +73,26 @@ export default function ExerciseFocus({ exerciseId }: Props) {
   }, [exerciseId, todayWorkout]);
 
   const handleBack = useCallback(() => {
+    const session = useSessionStore.getState();
+    const inSession =
+      !!todayWorkout &&
+      session.workoutId === todayWorkout.id &&
+      (session.status === "running" || session.status === "paused");
+
+    if (inSession) {
+      // Back is the explicit "leaving the session" signal, so the clock pauses
+      // and the user is dropped on the workout list rather than history.
+      if (session.status === "running") session.pause();
+      router.push("/workout");
+      return;
+    }
+
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
       return;
     }
     router.push("/workout");
-  }, [router]);
+  }, [router, todayWorkout]);
 
   const showSkeleton = isLoading && !workoutExercise;
   const loadFailed = (isError || storeError) && !workoutExercise;
@@ -142,8 +167,8 @@ export default function ExerciseFocus({ exerciseId }: Props) {
   return (
     <ExerciseFocusView
       key={workoutExercise.id}
+      workout={todayWorkout!}
       exercise={workoutExercise}
-      workoutId={todayWorkout!.id}
       onExit={handleBack}
     />
   );
@@ -152,14 +177,17 @@ export default function ExerciseFocus({ exerciseId }: Props) {
 /* ── Focus view ── */
 
 function ExerciseFocusView({
+  workout,
   exercise,
-  workoutId,
   onExit,
 }: {
+  workout: Workout;
   exercise: WorkoutExercise;
-  workoutId: string;
   onExit: () => void;
 }) {
+  const router = useRouter();
+  const workoutId = workout.id;
+
   const name = exercise.exerciseName;
   const image = MUSCLE_GROUP_EMOJI[exercise.primaryMuscle] ?? "🏋️";
   const gradient = pickGradient(exercise.exerciseName);
@@ -177,6 +205,35 @@ function ExerciseFocusView({
   const loggedSets = exercise.sets.length;
   const currentSet = Math.min(loggedSets + 1, totalSets);
   const allSetsDone = loggedSets >= totalSets;
+  const restSeconds = restSecondsFor(exercise);
+
+  /* ── Guided session ── */
+
+  const sessionHydrated = useSessionStore((s) => s.hydrated);
+  const sessionStatus = useSessionStore((s) => s.status);
+  const sessionWorkoutId = useSessionStore((s) => s.workoutId);
+  const sessionDate = useSessionStore((s) => s.date);
+  const skippedExerciseIds = useSessionStore((s) => s.skippedExerciseIds);
+  const completedExerciseIds = useSessionStore((s) => s.completedExerciseIds);
+  const startRest = useSessionStore((s) => s.startRest);
+  const skipExercise = useSessionStore((s) => s.skipExercise);
+  const completeExercise = useSessionStore((s) => s.completeExercise);
+  const resumeSession = useSessionStore((s) => s.resume);
+  const finishSession = useSessionStore((s) => s.finish);
+  const completeWorkout = useCompleteWorkout();
+
+  // Both mean "the session should not come back here".
+  const excludedExerciseIds = useMemo(
+    () => [...skippedExerciseIds, ...completedExerciseIds],
+    [skippedExerciseIds, completedExerciseIds],
+  );
+
+  const inSession =
+    sessionHydrated &&
+    sessionWorkoutId === workoutId &&
+    sessionDate === workout.date &&
+    (sessionStatus === "running" || sessionStatus === "paused");
+  const sessionPaused = inSession && sessionStatus === "paused";
 
   const [logSheetOpen, setLogSheetOpen] = useState(false);
   const logSet = useLogSet();
@@ -222,6 +279,12 @@ function ExerciseFocusView({
     hideTimer.current = window.setTimeout(() => setOverlayVisible(false), OVERLAY_VISIBLE_MS);
   }, []);
 
+  const hideOverlay = useCallback(() => {
+    if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    hideTimer.current = null;
+    setOverlayVisible(false);
+  }, []);
+
   useEffect(() => {
     scheduleHide();
     return () => {
@@ -229,10 +292,15 @@ function ExerciseFocusView({
     };
   }, [scheduleHide]);
 
+  // A tap toggles the controls: show them when hidden, dismiss them when shown.
   const handleTap = useCallback(() => {
+    if (overlayVisible) {
+      hideOverlay();
+      return;
+    }
     setOverlayVisible(true);
     scheduleHide();
-  }, [scheduleHide]);
+  }, [overlayVisible, hideOverlay, scheduleHide]);
 
   // Cycle cues while the controls are hidden — only worth doing with 2+.
   useEffect(() => {
@@ -243,7 +311,7 @@ function ExerciseFocusView({
     return () => window.clearInterval(id);
   }, [overlayVisible, rotating, cues.length]);
 
-  // Rest timer — one interval while resting, cleaned up when it reaches zero.
+  // Out-of-session rest timer — one interval while resting, cleaned up at zero.
   useEffect(() => {
     if (!resting) return;
     const id = window.setInterval(() => {
@@ -252,12 +320,82 @@ function ExerciseFocusView({
     return () => window.clearInterval(id);
   }, [resting]);
 
+  const completeSession = () => {
+    finishSession();
+    completeWorkout.mutate(workoutId);
+    router.replace("/complete");
+  };
+
+  /**
+   * Move the session on. Rest is per exercise and belongs to the block that
+   * just ended, so it is read before the step changes.
+   */
+  const advance = (
+    next: SessionStep | null,
+    restForThisBlock: number,
+    catchUpExerciseId: string | null,
+    completedExerciseId: string | null = null,
+  ) => {
+    if (!next) {
+      completeSession();
+      return;
+    }
+
+    if (restForThisBlock > 0) {
+      startRest({
+        durationSeconds: restForThisBlock,
+        next,
+        catchUpExerciseId,
+        completedExerciseId,
+      });
+      router.push("/rest");
+      return;
+    }
+
+    if (next.exerciseId !== exercise.id) {
+      router.replace(`/exercise?exerciseId=${next.exerciseId}`);
+    }
+  };
+
   const handleLog = () => {
+    if (inSession) {
+      if (sessionStatus !== "running") {
+        resumeSession();
+        return;
+      }
+      if (allSetsDone) {
+        // Landed on an exercise that is already fully logged — move on.
+        advance(firstStep(workout, excludedExerciseIds), 0, null);
+        return;
+      }
+      setLogSheetOpen(true);
+      return;
+    }
+
     if (allSetsDone) {
       onExit();
       return;
     }
     setLogSheetOpen(true);
+  };
+
+  const handleSkip = () => {
+    const next = stepAfterExercise(workout, exercise.id, [
+      ...excludedExerciseIds,
+      exercise.id,
+    ]);
+    skipExercise(exercise.id);
+    advance(next, restSeconds, exercise.id);
+  };
+
+  const handleDone = () => {
+    const next = stepAfterExercise(workout, exercise.id, [
+      ...excludedExerciseIds,
+      exercise.id,
+    ]);
+    completeExercise(exercise.id);
+    // No catch-up: the user says it's done. Rest page offers an undo instead.
+    advance(next, restSeconds, null, exercise.id);
   };
 
   const handleSubmitSet = (data: WorkoutSetInput) => {
@@ -267,10 +405,27 @@ function ExerciseFocusView({
         onSuccess: () => {
           setLogSheetOpen(false);
           logSet.reset();
-          setRestActive(true);
-          setRestTime(REST_SECONDS);
-          setOverlayVisible(true);
-          scheduleHide();
+
+          if (!inSession) {
+            setRestActive(true);
+            setRestTime(REST_SECONDS);
+            setOverlayVisible(true);
+            scheduleHide();
+            return;
+          }
+
+          // Computed from the count we already know, so a slow refetch can't
+          // send the user to the wrong set.
+          advance(
+            stepAfterSet(
+              workout,
+              exercise.id,
+              exercise.sets.length + 1,
+              excludedExerciseIds,
+            ),
+            restSeconds,
+            null,
+          );
         },
       },
     );
@@ -316,6 +471,18 @@ function ExerciseFocusView({
   // While idle the card shows the upcoming rest, not a stale 0:00.
   const displayRestTime = resting ? restTime : REST_SECONDS;
 
+  const primaryLabel = inSession
+    ? sessionPaused
+      ? "Resume workout"
+      : allSetsDone
+        ? "Next exercise"
+        : "Log set"
+    : allSetsDone
+      ? "Finish"
+      : "Log set";
+
+  const primaryIcon = inSession && sessionPaused;
+
   return (
     <div
       className="relative min-h-dvh overflow-hidden bg-background text-foreground"
@@ -348,6 +515,24 @@ function ExerciseFocusView({
       )}
       {/* Soft vignette for legibility */}
       <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/10 to-background/90" />
+
+      {/* Persistent top bar — the session clock outlives the auto-hiding controls. */}
+      <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-6 pt-14">
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={onExit}
+          className="p-2 -ml-2 rounded-xl bg-background/60 backdrop-blur-md cursor-pointer"
+          aria-label="Go back"
+        >
+          <ArrowLeft size={22} />
+        </motion.button>
+        <div className="flex items-center gap-2">
+          {inSession && <SessionClock />}
+          <span className="text-[10px] uppercase tracking-widest text-primary font-semibold px-2 py-1 rounded-md bg-primary/15">
+            Set {currentSet} of {totalSets}
+          </span>
+        </div>
+      </div>
 
       {/* Cycling instructions (visible when overlay hidden) */}
       <AnimatePresence>
@@ -390,28 +575,18 @@ function ExerciseFocusView({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="absolute inset-0 z-20 flex flex-col"
+            className="absolute inset-0 z-20 flex flex-col pt-24"
             onClick={(e) => {
-              // Buttons handle their own clicks; don't bubble up to the root tap-to-show.
+              // Never let the root tap handler see this — it would toggle again.
               e.stopPropagation();
-              scheduleHide();
+              // Controls handle their own clicks; tapping one shouldn't dismiss them.
+              if ((e.target as Element).closest("button, a, [role='button']")) {
+                scheduleHide();
+                return;
+              }
+              hideOverlay();
             }}
           >
-            {/* Top bar */}
-            <div className="flex items-start justify-between px-6 pt-14 pb-4">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={onExit}
-                className="p-2 -ml-2 rounded-xl bg-background/60 backdrop-blur-md cursor-pointer"
-                aria-label="Go back"
-              >
-                <ArrowLeft size={22} />
-              </motion.button>
-              <span className="text-[10px] uppercase tracking-widest text-primary font-semibold px-2 py-1 rounded-md bg-primary/15">
-                Set {currentSet} of {totalSets}
-              </span>
-            </div>
-
             {/* Target muscles */}
             <p className="sr-only">Targets: {targets.join(", ")}</p>
             <div className="flex-1 flex items-center justify-center px-6">
@@ -447,8 +622,12 @@ function ExerciseFocusView({
                   onClick={handleLog}
                   className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-primary text-primary-foreground font-semibold glow-primary-intense cursor-pointer"
                 >
-                  <Check size={18} />
-                  {allSetsDone ? "Finish" : "Log set"}
+                  {primaryIcon ? (
+                    <Play size={18} fill="currentColor" />
+                  ) : (
+                    <Check size={18} />
+                  )}
+                  {primaryLabel}
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.96 }}
@@ -460,34 +639,80 @@ function ExerciseFocusView({
                 </motion.button>
               </div>
 
-              {/* Rest timer */}
-              <div className="rounded-2xl bg-background/70 backdrop-blur-md border border-border px-4 py-3 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
-                  <Timer size={16} className="text-primary" />
+              {inSession ? (
+                /* Rest is its own screen now, so this row only previews it. */
+                <div className="rounded-2xl bg-background/70 backdrop-blur-md border border-border px-4 py-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <Timer size={16} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Rest after set
+                    </p>
+                    <p className="text-xl font-bold font-display tabular-nums">
+                      {restSeconds > 0 ? (
+                        formatClock(restSeconds)
+                      ) : (
+                        <span className="text-base font-semibold text-muted-foreground">
+                          No rest
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!allSetsDone && (
+                      <motion.button
+                        whileTap={{ scale: 0.94 }}
+                        onClick={handleDone}
+                        disabled={sessionPaused}
+                        aria-label="Mark exercise done"
+                        className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-sm font-semibold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        <Check size={14} />
+                        Done
+                      </motion.button>
+                    )}
+                    <motion.button
+                      whileTap={{ scale: 0.94 }}
+                      onClick={handleSkip}
+                      disabled={sessionPaused}
+                      aria-label="Skip exercise"
+                      className="px-3 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      Skip
+                    </motion.button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {resting ? "Resting" : "Next rest"}
-                  </p>
-                  <motion.p
-                    key={displayRestTime}
-                    initial={{ opacity: 0.6 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xl font-bold font-display"
+              ) : (
+                /* Rest timer */
+                <div className="rounded-2xl bg-background/70 backdrop-blur-md border border-border px-4 py-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <Timer size={16} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {resting ? "Resting" : "Next rest"}
+                    </p>
+                    <motion.p
+                      key={displayRestTime}
+                      initial={{ opacity: 0.6 }}
+                      animate={{ opacity: 1 }}
+                      className="text-xl font-bold font-display"
+                    >
+                      {formatClock(displayRestTime)}
+                    </motion.p>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={skipRest}
+                    disabled={!resting}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
                   >
-                    {formatClock(displayRestTime)}
-                  </motion.p>
+                    <SkipForward size={14} />
+                    Skip
+                  </motion.button>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  onClick={skipRest}
-                  disabled={!resting}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  <SkipForward size={14} />
-                  Skip
-                </motion.button>
-              </div>
+              )}
             </div>
           </motion.div>
         )}
