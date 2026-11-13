@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { USE_MOCKS } from "@/lib/mock/config";
+
 const protectedRoutes = [
   "/onboarding",
   "/dashboard",
@@ -50,6 +52,10 @@ async function refreshAccessToken(
 }
 
 export async function proxy(request: NextRequest) {
+  // Fixture mode has no auth cookies — every route renders so the session
+  // screens can be exercised without a backend.
+  if (USE_MOCKS) return NextResponse.next();
+
   const hasAccessToken = request.cookies.has("ACCESS_TOKEN");
   const { pathname } = request.nextUrl;
 

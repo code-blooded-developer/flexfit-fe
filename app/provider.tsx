@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useSessionStore } from "@/store/sessionStore";
+import { USE_MOCKS } from "@/lib/mock/config";
 
 const queryClient = new QueryClient();
 
@@ -13,9 +14,16 @@ export default function AppProviders({
   children: React.ReactNode;
 }) {
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js");
+    if (!("serviceWorker" in navigator)) return;
+    // Fixture mode: a cached worker would keep serving the pre-fix bundle,
+    // which is the fastest way to "verify" code you no longer have.
+    if (USE_MOCKS) {
+      void navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((reg) => void reg.unregister());
+      });
+      return;
     }
+    navigator.serviceWorker.register("/sw.js");
   }, []);
 
   useEffect(() => {

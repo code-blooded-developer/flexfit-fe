@@ -24,6 +24,24 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Other scripts: `bun run typecheck`, `bun run lint`.
+
+## Mock mode (no backend)
+
+Run the UI against local fixtures instead of the Spring API:
+
+```bash
+bun run dev:mock        # same as NEXT_PUBLIC_USE_MOCKS=1 bun dev
+```
+
+- Fixture API at `app/api/v1/[...path]/route.ts`, same response envelope as the backend
+- Auth redirects skipped in `proxy.ts`, so protected routes render without cookies
+- Service worker disabled, so a cached bundle can't outlive a code change
+- Reviewer tooling at [`/dev/seed`](http://localhost:3000/dev/seed): session scenarios
+
+`NEXT_PUBLIC_*` is inlined at build time — set the flag before starting the server and restart to change it. See `MOCK.md` for the scenario checklist.
+
+
 ## Scripts
 
 | Command | Description |

@@ -1,12 +1,18 @@
 import { ApiError } from "@/lib/apiError";
+import { USE_MOCKS } from "@/lib/mock/config";
 import { ApiResponse } from "@/types/api";
 
 type RequestOptions = RequestInit & {
   params?: Record<string, string>;
 };
 
-const API_BASE =
-  process.env.NODE_ENV === "development"
+/**
+ * Fixture mode answers from `app/api/v1/[...path]`, so it has to be same-origin.
+ * Production already is; only dev normally points at the Spring backend.
+ */
+const API_BASE = USE_MOCKS
+  ? "/api/v1"
+  : process.env.NODE_ENV === "development"
     ? "http://localhost:8080/api/v1"
     : "/api/v1";
 

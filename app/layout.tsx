@@ -1,16 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import AppProviders from "./provider";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+/**
+ * Fonts are vendored instead of fetched from Google at build time. `next/font/google`
+ * downloads on first compile, so a machine without egress to fonts.gstatic.com fails
+ * to start the app at all. Both files are the latin-subset variable cuts (OFL).
+ */
+const spaceGrotesk = localFont({
+  src: "../public/fonts/space-grotesk-latin-var.woff2",
   variable: "--font-space-grotesk",
-  subsets: ["latin"],
+  weight: "300 700",
+  display: "swap",
 });
 
-const inter = Inter({
+const inter = localFont({
+  src: "../public/fonts/inter-latin-var.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
