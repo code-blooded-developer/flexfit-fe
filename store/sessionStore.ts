@@ -36,6 +36,7 @@ type SessionStore = {
   completedAt: number | null;
   accumulatedMs: number;
   runningSince: number | null;
+  lastSeenAt: number | null;
   /** Exercises the user moved past without finishing. */
   skippedExerciseIds: string[];
   /** Exercises the user marked done, even if sets were left unlogged. */
@@ -55,6 +56,12 @@ type SessionStore = {
   clearRest: () => void;
 };
 
+/** Maximum time the app can be away/closed while running that is counted as training time. */
+const CLOSED_GRACE_MS = 2 * 60_000;
+
+/** A session started or untouched for longer than this is stale and should not be resumed. */
+const STALE_AFTER_MS = 24 * 60 * 60_000;
+
 const EMPTY = {
   status: "idle" as SessionStatus,
   workoutId: null,
@@ -63,6 +70,7 @@ const EMPTY = {
   completedAt: null,
   accumulatedMs: 0,
   runningSince: null,
+  lastSeenAt: null,
   skippedExerciseIds: [] as string[],
   completedExerciseIds: [] as string[],
   rest: null,
@@ -119,6 +127,7 @@ export const useSessionStore = create<SessionStore>()(
           date,
           startedAt: now,
           runningSince: now,
+          lastSeenAt: now,
         });
       },
 
@@ -132,6 +141,7 @@ export const useSessionStore = create<SessionStore>()(
             state.accumulatedMs +
             (state.runningSince !== null ? now - state.runningSince : 0),
           runningSince: null,
+          lastSeenAt: now,
           rest: freezeRest(state.rest, now),
         });
       },
@@ -143,6 +153,7 @@ export const useSessionStore = create<SessionStore>()(
         set({
           status: "running",
           runningSince: now,
+          lastSeenAt: now,
           rest: thawRest(state.rest, now),
         });
       },
@@ -158,6 +169,7 @@ export const useSessionStore = create<SessionStore>()(
             state.accumulatedMs +
             (state.runningSince !== null ? now - state.runningSince : 0),
           runningSince: null,
+          lastSeenAt: now,
           rest: null,
         });
       },
@@ -218,6 +230,47 @@ export const useSessionStore = create<SessionStore>()(
       version: 1,
       // Read in app/provider.tsx so server and client render the same first frame.
       skipHydration: true,
+      merge: (persistedState, currentState) => {
+        const stored = persistedState as Partial<SessionStore> | undefined;
+        if (!stored) return currentState;
+
+        const now = Date.now();
+        const merged = { ...currentState, ...stored };
+
+        // 1. Stale session: older than 24 hours -> reset to clean state
+        if (
+          merged.startedAt !== null &&
+          now - merged.startedAt > STALE_AFTER_MS
+        ) {
+          return { ...currentState };
+        }
+
+        // 2. If it was not running, keep state as-is (e.g. paused sessions remain exact)
+        if (merged.status !== "running" || merged.runningSince === null) {
+          return merged;
+        }
+
+        // 3. Closed while running: bank proven running time (if lastSeenAt exists),
+        // and cap the unproven gap to grace period (at most CLOSED_GRACE_MS).
+        const rawLastSeen = (stored as { lastSeenAt?: unknown }).lastSeenAt;
+        const lastSeen =
+          typeof rawLastSeen === "number" && rawLastSeen > merged.runningSince
+            ? Math.min(rawLastSeen, now)
+            : merged.runningSince;
+
+        const provenTime = Math.max(lastSeen - merged.runningSince, 0);
+        const unprovenGap = Math.max(now - lastSeen, 0);
+        const graceBuffer = Math.min(unprovenGap, CLOSED_GRACE_MS);
+
+        return {
+          ...merged,
+          status: "paused",
+          accumulatedMs: merged.accumulatedMs + provenTime + graceBuffer,
+          runningSince: null,
+          lastSeenAt: now,
+          rest: freezeRest(merged.rest, now),
+        };
+      },
       partialize: (state) => ({
         status: state.status,
         workoutId: state.workoutId,
@@ -226,6 +279,7 @@ export const useSessionStore = create<SessionStore>()(
         completedAt: state.completedAt,
         accumulatedMs: state.accumulatedMs,
         runningSince: state.runningSince,
+        lastSeenAt: state.lastSeenAt,
         skippedExerciseIds: state.skippedExerciseIds,
         completedExerciseIds: state.completedExerciseIds,
         rest: state.rest,
