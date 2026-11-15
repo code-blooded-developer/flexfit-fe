@@ -93,6 +93,16 @@ async function handle(
   if (method === "GET" && route === "__mock/state") {
     return ok(db.dbSnapshot());
   }
+  if (method === "POST" && route === "__mock/history") {
+    const requested = body.mode;
+    const mode: "seeded" | "fresh" =
+      requested === "fresh" || requested === "seeded"
+        ? requested
+        : db.getHistoryMode() === "seeded"
+          ? "fresh"
+          : "seeded";
+    return ok({ historyMode: db.setHistoryMode(mode) });
+  }
   if (method === "POST" && route === "__mock/reset") {
     db.resetDb();
     return ok(db.dbSnapshot());
@@ -101,6 +111,10 @@ async function handle(
   /* ── Workouts ── */
   if (method === "GET" && route === "workouts/today") {
     return ok(db.todayWorkout());
+  }
+
+  if (method === "GET" && route === "workouts/history") {
+    return ok(db.history());
   }
 
   if (method === "GET" && route === "workouts/today/alternate-muscles") {

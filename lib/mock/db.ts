@@ -8,6 +8,7 @@ import type {
   WorkoutExercise,
   WorkoutSet,
   WorkoutSetInput,
+  WorkoutSummary,
 } from "@/types/workout";
 
 /* ── Exercise library ── */
@@ -138,6 +139,13 @@ type LibraryKey = keyof typeof LIBRARY;
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/** Same UTC basis as `today()`, so a seeded date can never disagree with it. */
+function dateDaysAgo(days: number): string {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
 function makeExercise(
   id: string,
   libraryKey: LibraryKey,
@@ -203,11 +211,18 @@ function seedSwappedWorkout(id: string, muscle: MuscleGroup): Workout {
 
 /* ── In-memory store ── */
 
+export type HistoryMode = "seeded" | "fresh";
+
 type MockDb = {
   workout: Workout;
   nextSetId: number;
   nextAddedId: number;
   swapCount: number;
+  /** Whether `GET /workouts/history` returns the seeded past sessions. */
+  historyMode: HistoryMode;
+  /** Recorded time for today's session, set when it is completed. */
+  completedElapsedSeconds: number;
+  completedAt: string | null;
 };
 
 const globalForMock = globalThis as typeof globalThis & {
@@ -232,6 +247,9 @@ export function getDb(): MockDb {
     nextSetId: 1,
     nextAddedId: 1,
     swapCount: 0,
+    historyMode: "seeded",
+    completedElapsedSeconds: 0,
+    completedAt: null,
   };
   return globalForMock.__flexfitMockDb;
 }
@@ -242,6 +260,9 @@ export function resetDb(): MockDb {
     nextSetId: 1,
     nextAddedId: 1,
     swapCount: 0,
+    historyMode: "seeded",
+    completedElapsedSeconds: 0,
+    completedAt: null,
   };
   return globalForMock.__flexfitMockDb;
 }
@@ -258,11 +279,92 @@ export function alternatives(): WorkoutExercise[] {
   );
 }
 
+/* ── History ── */
+
+type HistorySeed = {
+  daysAgo: number;
+  muscle: MuscleGroup;
+  /** Planned minutes. */
+  plan: number;
+  /** What the clock recorded — deliberately different from the plan. */
+  elapsedSeconds: number;
+  exerciseCount: number;
+};
+
+/**
+ * Past sessions, dated relative to today so the numbers hold whatever day the
+ * repo is reviewed on.
+ *
+ * The shape is the test: a gap at 4 days, day 6 inside the window and day 7
+ * outside it, and every row's recorded time different from its plan.
+ */
+const HISTORY_SEED: HistorySeed[] = [
+  { daysAgo: 1, muscle: "CHEST", plan: 45, elapsedSeconds: 2400, exerciseCount: 4 },
+  { daysAgo: 2, muscle: "BACK", plan: 38, elapsedSeconds: 1980, exerciseCount: 3 },
+  { daysAgo: 3, muscle: "LEGS", plan: 52, elapsedSeconds: 3000, exerciseCount: 4 },
+  { daysAgo: 5, muscle: "SHOULDERS", plan: 41, elapsedSeconds: 1800, exerciseCount: 5 },
+  { daysAgo: 6, muscle: "CHEST", plan: 30, elapsedSeconds: 900, exerciseCount: 4 },
+  { daysAgo: 7, muscle: "BACK", plan: 60, elapsedSeconds: 3300, exerciseCount: 5 },
+  { daysAgo: 9, muscle: "LEGS", plan: 47, elapsedSeconds: 2640, exerciseCount: 3 },
+];
+
+function seedHistory(): WorkoutSummary[] {
+  return HISTORY_SEED.map((row) => {
+    const date = dateDaysAgo(row.daysAgo);
+    return {
+      id: `w-hist-${row.daysAgo}`,
+      date,
+      targetMuscle: row.muscle,
+      exerciseCount: row.exerciseCount,
+      totalDurationMinutes: row.plan,
+      elapsedSeconds: row.elapsedSeconds,
+      status: "COMPLETED",
+      completedAt: `${date}T18:30:00.000Z`,
+    };
+  });
+}
+
+/** Today's workout as history would see it — `PLANNED` until it is completed. */
+function todaySummary(db: MockDb): WorkoutSummary {
+  return {
+    id: db.workout.id,
+    date: db.workout.date,
+    targetMuscle: db.workout.targetMuscle,
+    exerciseCount: db.workout.exercises.length,
+    totalDurationMinutes: db.workout.totalDurationMinutes,
+    // Defaults guard the in-memory db from a dev server that started before
+    // these fields existed — HMR keeps the object.
+    elapsedSeconds: db.completedElapsedSeconds ?? 0,
+    status: db.workout.status,
+    completedAt: db.completedAt ?? null,
+  };
+}
+
+export function getHistoryMode(): HistoryMode {
+  return getDb().historyMode === "fresh" ? "fresh" : "seeded";
+}
+
+export function setHistoryMode(mode: HistoryMode): HistoryMode {
+  getDb().historyMode = mode === "fresh" ? "fresh" : "seeded";
+  return getDb().historyMode;
+}
+
+/**
+ * `fresh` keeps today's planned workout — a new account still has today's
+ * session — and drops everything before it.
+ */
+export function history(): WorkoutSummary[] {
+  const todays = todaySummary(getDb());
+  return getHistoryMode() === "fresh" ? [todays] : [todays, ...seedHistory()];
+}
+
 /* ── Mutations ── */
 
 export function swapWorkout(muscle: string): Workout {
   const db = getDb();
   db.swapCount += 1;
+  db.completedElapsedSeconds = 0;
+  db.completedAt = null;
   db.workout = seedSwappedWorkout(
     `w-today-swapped-${db.swapCount}`,
     (muscle as MuscleGroup) ?? "LEGS",
@@ -358,6 +460,12 @@ export function deleteSet(exerciseId: string, setId: string): boolean {
 export function completeWorkout(): Workout {
   const db = getDb();
   db.workout.status = "COMPLETED";
+  // The real POST carries no duration; the fixture stands in with the planned
+  // minutes so the record is still self-consistent after a completion.
+  if (db.completedElapsedSeconds === 0) {
+    db.completedElapsedSeconds = (db.workout.totalDurationMinutes ?? 0) * 60;
+  }
+  db.completedAt ??= new Date().toISOString();
   return db.workout;
 }
 
@@ -369,6 +477,8 @@ export function dbSnapshot() {
     workoutId: db.workout.id,
     date: db.workout.date,
     status: db.workout.status,
+    historyMode: getHistoryMode(),
+    historyCount: history().length,
     exercises: db.workout.exercises.map((ex) => ({
       id: ex.id,
       name: ex.exerciseName,

@@ -84,6 +84,25 @@ export type Workout = {
   exercises: WorkoutExercise[];
 };
 
+/**
+ * One row of `GET /workouts/history`. Enough to list past sessions — not the
+ * full workout, which is only fetched for today.
+ */
+export type WorkoutSummary = {
+  id: string;
+  /** `YYYY-MM-DD`, the date the session belongs to. */
+  date: string;
+  targetMuscle: MuscleGroup;
+  exerciseCount: number;
+  /** What the plan asked for. */
+  totalDurationMinutes: number | null;
+  /** What the clock recorded. Zero while the workout is unfinished. */
+  elapsedSeconds: number;
+  status: WorkoutStatus;
+  /** ISO timestamp, set once the session is completed. */
+  completedAt: string | null;
+};
+
 export type AlternateMuscle = {
   splitDayIndex: number;
   name: string;

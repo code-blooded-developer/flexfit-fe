@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { FlaskConical, RotateCcw, Timer, Trash2 } from "lucide-react";
+import { FlaskConical, History, RotateCcw, Timer, Trash2 } from "lucide-react";
 
 import { USE_MOCKS } from "@/lib/mock/config";
 import { workoutService } from "@/services/workoutService";
@@ -20,6 +20,8 @@ import type { Workout } from "@/types/workout";
 const SESSION_KEY = "flexfit.session";
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
+
+type HistoryMode = "seeded" | "fresh";
 
 type Seed = {
   status: "idle" | "running" | "paused" | "completed";
@@ -53,6 +55,7 @@ function writeSession(state: Seed) {
 
 export default function MockSeedPage() {
   const [workout, setWorkout] = useState<Workout | null>(null);
+  const [historyMode, setHistoryMode] = useState<HistoryMode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dump, setDump] = useState("");
 
@@ -61,6 +64,13 @@ export default function MockSeedPage() {
     try {
       const current = await workoutService.getTodayWorkout();
       setWorkout(current);
+
+      const res = await fetch("/api/v1/__mock/state");
+      const json = (await res.json()) as {
+        data?: { historyMode?: HistoryMode };
+      };
+      setHistoryMode(json.data?.historyMode ?? null);
+
       setDump(localStorage.getItem(SESSION_KEY) ?? "(nothing stored)");
     } catch {
       setError("Could not reach the fixture API. Is NEXT_PUBLIC_USE_MOCKS=1 set?");
@@ -83,6 +93,15 @@ export default function MockSeedPage() {
   const resetFixtures = async () => {
     await fetch("/api/v1/__mock/reset", { method: "POST" });
     localStorage.removeItem(SESSION_KEY);
+    await refresh();
+  };
+
+  const applyHistory = async (mode: HistoryMode) => {
+    await fetch("/api/v1/__mock/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode }),
+    });
     await refresh();
   };
 
@@ -283,6 +302,31 @@ export default function MockSeedPage() {
             localStorage.removeItem(SESSION_KEY);
             window.location.assign("/workout");
           }}
+        />
+      </div>
+
+      <h2 className="mt-10 font-display text-lg font-bold">Workout history</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        What the dashboard has to count. Dates are relative to today, so the
+        numbers hold whatever day you review. Current:{" "}
+        <span className="font-semibold text-foreground">
+          {historyMode ?? "—"}
+        </span>
+      </p>
+
+      <div className="mt-3 flex flex-col gap-3">
+        <Scenario
+          title="Seeded — 5 workouts in the last 7 days"
+          detail="Expect 5 workouts · 168 min · 3-day streak. Previous workout: Chest Day, 4 exercises, 40 min."
+          icon={<History size={16} className="text-primary" />}
+          onClick={() => void applyHistory("seeded")}
+        />
+
+        <Scenario
+          title="Fresh account — nothing logged"
+          detail="Expect 0 workouts · 0 min · no streak, and an empty state rather than a card of zeroes."
+          icon={<History size={16} className="text-primary" />}
+          onClick={() => void applyHistory("fresh")}
         />
       </div>
 

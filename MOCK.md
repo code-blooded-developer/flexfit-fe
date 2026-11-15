@@ -28,6 +28,7 @@ Flags are inlined at build time. Changing one means restarting the dev server.
 | Auth cookies (`ACCESS_TOKEN`) | `proxy.ts` early return |
 | Supabase exercise videos | `videoKey: null` → emoji fallback (unchanged code path) |
 | Google Fonts | vendored in `public/fonts`, no network needed (see `app/layout.tsx`) |
+| Workout history | `lib/mock/db.ts` — dated relative to today, plan and recorded time both present |
 
 The fixture API keeps state in memory on `globalThis`, so logged sets survive
 Next's dev-mode module reloads but reset when the server restarts.
@@ -80,11 +81,50 @@ localStorage.setItem(k, JSON.stringify(v));
 location.reload();
 ```
 
+## Dashboard fixtures
+
+`/dev/seed` → **Workout history**. Two modes, switched at runtime:
+
+| Mode | `GET /workouts/history` contains |
+|---|---|
+| `seeded` | today's workout + 7 completed sessions, 1, 2, 3, 5, 6, 7 and 9 days ago |
+| `fresh` | today's workout only — a brand-new account |
+
+Every completed row carries **both** durations: `totalDurationMinutes` (what the
+plan asked for) and `elapsedSeconds` (what the clock recorded). They never
+agree, so summing the wrong one is visible at a glance.
+
+Expected values, counting **completed** sessions over the **last 7 days
+including today**:
+
+| Mode | Workouts | Minutes | Streak | Previous workout |
+|---|---|---|---|---|
+| `seeded` | **5** | **168** | **3** | Chest Day · 4 exercises · 40 min |
+| `fresh` | **0** | **0** | none | empty state |
+
+Wrong answers, and what each one means:
+
+| Shown | Cause |
+|---|---|
+| 6 / 213 / 4 | today's `PLANNED` workout counted as done |
+| 5 / 206 / 3 | planned minutes summed instead of recorded minutes |
+| 7 / 267 / 3 | the 7-day window ignored |
+| 8 / 312 / 4 | no filtering at all — every row, every status |
+
+Day **6** is inside the window and day **7** is outside it: that pair is the
+boundary check. Day **4** is missing on purpose, which is what stops the streak
+at 3.
+
+Completing today's workout (`Almost done` → `Resume workout` → `Done`) takes the
+seeded mode to **6 workouts, streak 4**. Minutes gain the planned length of
+today's session, because the fixture's complete endpoint carries no duration.
+
 ## Endpoints
 
 | Method | Path |
 |---|---|
 | GET | `/workouts/today` |
+| GET | `/workouts/history` |
 | POST | `/workouts/today/swap` (returns a **new** workout id) |
 | GET | `/workouts/today/alternate-muscles` |
 | GET | `/workouts/:id/alternatives` |
@@ -97,7 +137,8 @@ location.reload();
 | GET | `/profiles` |
 | POST | any `/auth/*` |
 
-Reviewer-only: `GET /api/v1/__mock/state`, `POST /api/v1/__mock/reset`.
+Reviewer-only: `GET /api/v1/__mock/state`, `POST /api/v1/__mock/history`,
+`POST /api/v1/__mock/reset`.
 
 ## Gotchas that look like bugs
 
